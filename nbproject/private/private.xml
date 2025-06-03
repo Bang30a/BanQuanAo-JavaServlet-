@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project-private xmlns="http://www.netbeans.org/ns/project-private/1">
+    <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
+    <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
+        <group>
+            <file>file:/D:/code/javahehe/ShopDuck/web/user/logo.png</file>
+            <file>file:/D:/code/javahehe/ShopDuck/src/java/dao/OrderDetailDao.java</file>
+            <file>file:/D:/code/javahehe/ShopDuck/src/java/dao/OrderDao.java</file>
+            <file>file:/D:/code/javahehe/ShopDuck/src/java/control/admin/OrderDetailManagerServlet.java</file>
+            <file>file:/D:/code/javahehe/ShopDuck/web/admin/SizesManager.jsp</file>
+            <file>file:/D:/code/javahehe/ShopDuck/web/user/searchResults.jsp</file>
+            <file>file:/D:/code/javahehe/ShopDuck/src/java/control/user/ProductDetailServlet.java</file>
+            <file>file:/D:/code/javahehe/ShopDuck/src/java/control/admin/ProductsManagerServlet.java</file>
+            <file>file:/D:/code/javahehe/ShopDuck/web/user/style.css</file>
+            <file>file:/D:/code/javahehe/ShopDuck/web/admin/OrdersManager.jsp</file>
+            <file>file:/D:/code/javahehe/ShopDuck/web/user/Login.jsp</file>
+            <file>file:/D:/code/javahehe/ShopDuck/web/user/new.jsp</file>
+            <file>file:/D:/code/javahehe/ShopDuck/src/java/control/admin/StatisticsServlet.java</file>
+            <file>file:/D:/code/javahehe/ShopDuck/web/user/header.jsp</file>
+            <file>file:/D:/code/javahehe/ShopDuck/src/java/control/admin/ProductVariantsManagerServlet.java</file>
+            <file>file:/D:/code/javahehe/ShopDuck/src/java/control/user/ConfirmCheckoutServlet.java</file>
+            <file>file:/D:/code/javahehe/ShopDuck/src/java/control/user/RemoveFromCartServlet.java</file>
+            <file>file:/D:/code/javahehe/ShopDuck/src/java/control/LoginServlet.java</file>
+            <file>file:/D:/code/javahehe/ShopDuck/web/admin/Dashboard.jsp</file>
+            <file>file:/D:/code/javahehe/ShopDuck/web/user/View-products.jsp</file>
+            <file>file:/D:/code/javahehe/ShopDuck/web/user/Register.jsp</file>
+            <file>file:/D:/code/javahehe/ShopDuck/src/java/control/LogoutServlet.java</file>
+            <file>file:/D:/code/javahehe/ShopDuck/src/java/dao/ProductDao.java</file>
+            <file>file:/D:/code/javahehe/ShopDuck/web/admin/ProductsManager.jsp</file>
+            <file>file:/D:/code/javahehe/ShopDuck/web/user/size-guide-pants.jsp</file>
+            <file>file:/D:/code/javahehe/ShopDuck/web/user/quần%20kaki.jpg</file>
+            <file>file:/D:/code/javahehe/ShopDuck/src/java/entity/Users.java</file>
+            <file>file:/D:/code/javahehe/ShopDuck/src/java/control/user/ViewProductServlet.java</file>
+            <file>file:/D:/code/javahehe/ShopDuck/web/admin/Statistics.jsp</file>
+            <file>file:/D:/code/javahehe/ShopDuck/src/java/control/user/CheckoutServlet.java</file>
+            <file>file:/D:/code/javahehe/ShopDuck/web/user/Checkout.jsp</file>
+            <file>file:/D:/code/javahehe/ShopDuck/src/java/dao/UsersDao.java</file>
+            <file>file:/D:/code/javahehe/ShopDuck/src/java/control/admin/SizesManagerServlet.java</file>
+            <file>file:/D:/code/javahehe/ShopDuck/src/java/control/admin/UsersManagerServlet.java</file>
+            <file>file:/D:/code/javahehe/ShopDuck/src/java/dao/DashboardDao.java</file>
+            <file>file:/D:/code/javahehe/ShopDuck/web/admin/View-order-detail.jsp</file>
+            <file>file:/D:/code/javahehe/ShopDuck/web/user/info-products.jsp</file>
+            <file>file:/D:/code/javahehe/ShopDuck/src/java/control/user/AddToCartServlet.java</file>
+            <file>file:/D:/code/javahehe/ShopDuck/src/java/control/user/SearchProductServlet.java</file>
+            <file>file:/D:/code/javahehe/ShopDuck/src/java/entity/Products.java</file>
+            <file>file:/D:/code/javahehe/ShopDuck/web/admin/OrderDetailManager.jsp</file>
+            <file>file:/D:/code/javahehe/ShopDuck/web/admin/ProductVariantsManager.jsp</file>
+            <file>file:/D:/code/javahehe/ShopDuck/src/java/control/admin/OrdersManagerServlet.java</file>
+            <file>file:/D:/code/javahehe/ShopDuck/src/java/control/RegisterServlet.java</file>
+            <file>file:/D:/code/javahehe/ShopDuck/web/user/size-guide-shirt.jsp</file>
+        </group>
+    </open-files>
+</project-private>

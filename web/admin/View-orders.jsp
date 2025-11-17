@@ -7,37 +7,99 @@
     <meta charset="UTF-8">
     <title>Danh sách Đơn hàng</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body {
-            background-color: #f8fafc;
-        }
-        .container {
-            margin-top: 40px;
-            background-color: #fff;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-        }
-        h2 {
-            text-align: center;
-            margin-bottom: 25px;
-            color: #1e293b;
-        }
-        .btn-danger {
-            background-color: #ef4444;
-            border: none;
-        }
-        .btn-danger:hover {
-            background-color: #dc2626;
-        }
-        .table th, .table td {
-            vertical-align: middle;
-        }
-        .filter-form select {
-            max-width: 200px;
-            display: inline-block;
-        }
-    </style>
+<style>
+    body {
+        background-color: #f1f5f9;
+        font-family: "Segoe UI", sans-serif;
+    }
+
+    .container {
+        margin-top: 45px;
+        background: #ffffff;
+        padding: 32px;
+        border-radius: 16px;
+        box-shadow: 0 6px 25px rgba(0,0,0,0.08);
+        animation: fadeIn 0.4s ease;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    h2 {
+        text-align: center;
+        font-weight: 700;
+        font-size: 26px;
+        margin-bottom: 28px;
+        color: #0f172a;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .filter-form select, .filter-form button {
+        height: 40px;
+        border-radius: 8px;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #4f46e5, #3b82f6);
+        border: none;
+        padding: 7px 16px;
+        border-radius: 8px;
+        transition: 0.25s;
+    }
+
+    .btn-primary:hover {
+        opacity: 0.85;
+    }
+
+    table {
+        border-radius: 8px !important;
+        overflow: hidden;
+    }
+
+    thead.table-dark {
+        background: linear-gradient(135deg, #334155, #1e293b) !important;
+        border: none !important;
+    }
+
+    .table tbody tr:hover {
+        background-color: #f1f5f9;
+        transition: 0.25s ease;
+    }
+
+    select.form-select-sm {
+        border-radius: 6px;
+        padding: 4px 6px;
+        outline: none;
+    }
+
+    .btn-info {
+        background-color: #0ea5e9;
+        border: none;
+        padding: 5px 10px;
+        border-radius: 6px;
+        transition: 0.25s;
+    }
+
+    .btn-info:hover {
+        background-color: #0284c7;
+    }
+
+    .btn-danger {
+        background-color: #ef4444;
+        border: none;
+        padding: 5px 10px;
+        border-radius: 6px;
+        transition: 0.25s;
+    }
+
+    .btn-danger:hover {
+        background-color: #dc2626;
+    }
+</style>
+
 </head>
 <body>
 
@@ -45,17 +107,20 @@
     <h2>Danh sách Đơn hàng</h2>
 
     <!-- BỘ LỌC TRẠNG THÁI -->
-    <form method="get" action="View-orders.jsp" class="mb-4 d-flex justify-content-end align-items-center filter-form">
-        <label for="status" class="me-2 fw-bold">Lọc theo trạng thái:</label>
-        <select name="status" id="status" class="form-select me-2">
-            <option value="">-- Tất cả --</option>
-            <option value="Đã hủy" <%= "Đã hủy".equals(request.getParameter("status")) ? "selected" : "" %>>Đã hủy</option>
-            <option value="Đã giao" <%= "Đã giao".equals(request.getParameter("status")) ? "selected" : "" %>>Đã giao</option>
-            <option value="Đang giao hàng" <%= "Đang giao hàng".equals(request.getParameter("status")) ? "selected" : "" %>>Đang giao hàng</option>
-            <option value="Chờ xử lý" <%= "Chờ xử lý".equals(request.getParameter("status")) ? "selected" : "" %>>Chờ xử lý</option>
-        </select>
-        <button type="submit" class="btn btn-primary">Lọc</button>
-    </form>
+<form method="get" action="OrdersManagerServlet">
+    <input type="hidden" name="action" value="List">
+<select name="status" id="status" class="form-select me-2">
+    <option value="">-- Tất cả --</option>
+    <option value="Chờ xử lý" <%= "Chờ xử lý".equals(request.getParameter("status")) ? "selected" : "" %>>Chờ xử lý</option>
+    <option value="Đang giao hàng" <%= "Đang giao hàng".equals(request.getParameter("status")) ? "selected" : "" %>>Đang giao hàng</option>
+    <option value="Đã giao" <%= "Đã giao".equals(request.getParameter("status")) ? "selected" : "" %>>Đã giao</option>
+    <option value="Đã hủy" <%= "Đã hủy".equals(request.getParameter("status")) ? "selected" : "" %>>Đã hủy</option>
+</select>
+
+
+    <button type="submit">Lọc</button>
+</form>
+
 
     <table class="table table-bordered table-hover text-center">
         <thead class="table-dark">

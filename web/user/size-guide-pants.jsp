@@ -170,7 +170,9 @@
     </table>
 
     <div class="back-button">
-        <a href="View-products.jsp">← Quay lại trang sản phẩm</a>
+<a href="${pageContext.request.contextPath}/user/view-products" 
+   class="btn btn-primary mt-3">← Quay lại trang sản phẩm</a>
+
     </div>
 </div>
 

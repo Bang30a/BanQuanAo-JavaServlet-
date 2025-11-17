@@ -3,9 +3,8 @@ package control.admin;
 import dao.OrderDao;
 import dao.OrderDetailDao;
 import dao.ProductVariantDao;
-import entity.OrderDetails;
 import entity.Orders;
-import entity.ProductVariants;
+import service.OrderAdminService; // <-- Import service
 
 import java.io.IOException;
 import java.sql.Timestamp;
@@ -17,13 +16,24 @@ import javax.servlet.http.*;
 @WebServlet("/admin/OrdersManagerServlet")
 public class OrdersManagerServlet extends HttpServlet {
 
+    private OrderAdminService adminService; // <-- Tham chiếu đến service
+
+    @Override
+    public void init() throws ServletException {
+        // Khởi tạo tất cả DAO và "tiêm" vào Service
+        OrderDao orderDao = new OrderDao();
+        OrderDetailDao detailDao = new OrderDetailDao();
+        ProductVariantDao variantDao = new ProductVariantDao();
+        
+        this.adminService = new OrderAdminService(orderDao, detailDao, variantDao);
+    }
+
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
-        throws ServletException, IOException {
+            throws ServletException, IOException {
+        
         request.setCharacterEncoding("UTF-8");
         response.setContentType("text/html;charset=UTF-8");
-
-        OrderDao dao = new OrderDao();
-        Orders order = null;
+        // KHÔNG tạo DAO ở đây nữa
 
         String action = request.getParameter("action");
         if (action == null || action.isEmpty()) {
@@ -33,78 +43,20 @@ public class OrdersManagerServlet extends HttpServlet {
         try {
             switch (action) {
                 case "SaveOrUpdate":
-                    int id = parseInt(request.getParameter("id"));
-                    int userId = parseInt(request.getParameter("userId"));
-                    double total = Double.parseDouble(request.getParameter("total"));
-                    String address = request.getParameter("address");
-                    String phone = request.getParameter("phone");
-                    Timestamp orderDate = Timestamp.valueOf(request.getParameter("orderDate"));
-                    String status = request.getParameter("status");
-                    if (status == null || status.trim().isEmpty()) {
-                        status = "Đang chờ";
-                    }
-
-                    order = new Orders(id, userId, orderDate, total, address, phone, status);
-
-                    if (id == 0 || dao.getOrderById(id) == null) {
-                        dao.addOrder(order);
-                    } else {
-                        dao.updateOrder(order);
-                    }
-
-                    response.sendRedirect("OrdersManagerServlet?action=List");
+                    handleSaveOrUpdate(request, response);
                     break;
-
                 case "AddOrEdit":
-                    id = parseInt(request.getParameter("id"));
-                    order = dao.getOrderById(id);
-                    if (order == null) {
-                        order = new Orders();
-                    }
-
-                    request.setAttribute("ORDER", order);
-                    request.setAttribute("ACTION", "SaveOrUpdate");
-                    request.getRequestDispatcher("/admin/OrdersManager.jsp").forward(request, response);
+                    handleAddOrEdit(request, response);
                     break;
-
                 case "Delete":
-                    id = parseInt(request.getParameter("id"));
-                    dao.deleteOrder(id);
-                    response.sendRedirect("OrdersManagerServlet?action=List");
+                    handleDelete(request, response);
                     break;
-
                 case "UpdateStatus":
-                    id = parseInt(request.getParameter("id"));
-                    String newStatus = request.getParameter("status");
-                    order = dao.getOrderById(id);
-                    if (order != null) {
-                        String oldStatus = order.getStatus();
-                        order.setStatus(newStatus);
-                        dao.updateOrder(order);
-
-                        // Nếu chuyển sang "Đã giao" và trước đó chưa phải "Đã giao"
-                        if (!"Đã giao".equalsIgnoreCase(oldStatus) && "Đã giao".equalsIgnoreCase(newStatus)) {
-                            OrderDetailDao detailDao = new OrderDetailDao();
-                            ProductVariantDao variantDao = new ProductVariantDao();
-
-                            List<OrderDetails> details = detailDao.getDetailsByOrderId(id);
-                            for (OrderDetails detail : details) {
-                                ProductVariants variant = variantDao.findById(detail.getProductVariantId());
-                                if (variant != null) {
-                                    int newStock = variant.getStock() - detail.getQuantity();
-                                    variant.setStock(Math.max(newStock, 0)); // Đảm bảo không âm
-                                    variantDao.updateVariant(variant);
-                                }
-                            }
-                        }
-                    }
-                    response.sendRedirect("OrdersManagerServlet?action=List");
+                    handleUpdateStatus(request, response);
                     break;
-
                 case "List":
                 default:
-                    request.setAttribute("list", dao.getAllOrders());
-                    request.getRequestDispatcher("/admin/View-orders.jsp").forward(request, response);
+                    handleList(request, response);
                     break;
             }
         } catch (Exception e) {
@@ -114,19 +66,101 @@ public class OrdersManagerServlet extends HttpServlet {
         }
     }
 
+    // --- Tách các action ra thành các hàm riêng cho rõ ràng ---
+
+    private void handleSaveOrUpdate(HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+        
+        int id = parseInt(request.getParameter("id"));
+        int userId = parseInt(request.getParameter("userId"));
+        double total = Double.parseDouble(request.getParameter("total"));
+        String address = request.getParameter("address");
+        String phone = request.getParameter("phone");
+        Timestamp orderDate = Timestamp.valueOf(request.getParameter("orderDate")); // Cẩn thận: có thể ném lỗi nếu format sai
+        String status = request.getParameter("status");
+        if (status == null || status.trim().isEmpty()) {
+            status = "Đang chờ";
+        }
+
+        Orders order = new Orders(id, userId, orderDate, total, address, phone, status);
+        
+        // Gọi Service
+        adminService.saveOrUpdateOrder(order);
+
+        response.sendRedirect("OrdersManagerServlet?action=List");
+    }
+
+    private void handleAddOrEdit(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        
+        int id = parseInt(request.getParameter("id"));
+        
+        // Service tự xử lý logic (nếu id=0 trả về order rỗng)
+        Orders order = adminService.getOrderForEdit(id); 
+
+        request.setAttribute("ORDER", order);
+        request.setAttribute("ACTION", "SaveOrUpdate");
+        request.getRequestDispatcher("/admin/OrdersManager.jsp").forward(request, response);
+    }
+
+    private void handleDelete(HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+        
+        int id = parseInt(request.getParameter("id"));
+        
+        // Gọi Service
+        adminService.deleteOrder(id);
+        
+        response.sendRedirect("OrdersManagerServlet?action=List");
+    }
+
+    private void handleUpdateStatus(HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+        
+        int id = parseInt(request.getParameter("id"));
+        String newStatus = request.getParameter("status");
+
+        // Gọi Service (nơi chứa logic phức tạp)
+        adminService.updateOrderStatus(id, newStatus); 
+        
+        response.sendRedirect("OrdersManagerServlet?action=List");
+    }
+
+   private void handleList(HttpServletRequest request, HttpServletResponse response)
+        throws ServletException, IOException {
+
+    String status = request.getParameter("status");
+
+    List<Orders> list;
+
+    if (status == null || status.trim().isEmpty()) {
+        list = adminService.getAllOrders();
+    } else {
+        list = adminService.getOrdersByStatus(status);
+    }
+
+    request.setAttribute("selectedStatus", status);
+    request.setAttribute("list", list);
+    request.getRequestDispatcher("/admin/View-orders.jsp").forward(request, response);
+}
+
+
+
     private int parseInt(String value) {
         return (value != null && !value.isEmpty()) ? Integer.parseInt(value) : 0;
     }
 
+    // --- Các hàm doGet, doPost giữ nguyên ---
+
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
-        throws ServletException, IOException {
+            throws ServletException, IOException {
         processRequest(request, response);
     }
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
-        throws ServletException, IOException {
+            throws ServletException, IOException {
         processRequest(request, response);
     }
 }

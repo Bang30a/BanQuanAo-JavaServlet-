@@ -1,197 +1,141 @@
+/* ----------------------------------
+  FILE STYLE.CSS
+  (Các thành phần: Card, Slide...)
+---------------------------------- */
+
 /* ----------- CARD SẢN PHẨM ----------- */
 .product-card {
     position: relative;
     overflow: hidden;
-    transition: transform 0.3s ease;
     background-color: #fff;
     text-align: center;
-    border: 1px solid #eee;
-    padding: 10px;
-    box-shadow: 0 0 5px rgba(0,0,0,0.1);
-    height: 100%;
+    border: none;
+    border-radius: 14px; 
+    padding: 0;
+    transition: transform .35s ease, box-shadow .35s ease;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
 }
+
 .product-card:hover {
-    transform: scale(1.03);
+    transform: translateY(-8px);
+    box-shadow: 0 14px 28px rgba(0,0,0,0.15);
 }
 .product-image {
     width: 100%;
-    height: 250px;
+    height: 260px;
     object-fit: cover;
+    border-radius: 14px 14px 0 0;
+    transition: transform .4s ease;
 }
+.product-card:hover .product-image {
+    transform: scale(1.08);
+}
+
+/* Overlay mờ hiện khi hover */
 .buy-overlay {
     position: absolute;
     bottom: 0;
     width: 100%;
-    background: rgba(0,0,0,0.6);
+    background: rgba(0,0,0,.55);
     color: white;
     text-align: center;
-    padding: 10px;
+    padding: 9px;
+    font-size: 15px;
     opacity: 0;
-    transition: 0.3s ease;
+    transition: .35s;
 }
 .product-card:hover .buy-overlay {
     opacity: 1;
 }
 
-/* ----------- SECTION SẢN PHẨM (Áo, Quần) ----------- */
-.product-section {
-    margin-bottom: 60px;
-}
-.product-section h2 {
-    text-align: left;
-    margin-bottom: 20px;
-    font-size: 24px;
-    font-weight: bold;
-}
-
 /* ----------- SLIDESHOW ----------- */
 #slideshow {
     position: relative;
-    height: 600px; /* Giảm bớt chiều cao để sản phẩm hiện ra dễ hơn */
+    height: 520px;
     overflow: hidden;
 }
+
 #slideshow img {
     width: 100%;
-    height: auto;
+    height: 520px;
+    object-fit: cover;
     position: absolute;
-    top: 0;
-    left: 0;
+    inset: 0;
     opacity: 0;
-    transition: opacity 1s ease-in-out;
+    transition: opacity 1.6s ease-in-out;
 }
 #slideshow img.active {
     opacity: 1;
+}
+
+/* Overlay chữ đẹp trên slideshow */
+#slideshow::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(0,0,0,0.2), rgba(0,0,0,0.65));
     z-index: 2;
 }
 
-/* ----------- HEADER & NAV ----------- */
-body {
-    margin: 0;
-    font-family: Arial, sans-serif;
-}
-header {
-    background-color: #fff;
-    padding: 10px 30px;
-    border-bottom: 1px solid #ddd;
-}
-header > div {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 20px;
-}
-nav ul {
-    list-style: none;
-    display: flex;
-    margin: 0;
-    padding: 0;
-    gap: 15px;
-}
-nav ul li {
-    position: relative;
-    padding: 8px 12px;
-    cursor: pointer;
-    white-space: nowrap;
-}
-nav ul li:hover > ul {
-    display: block;
-}
-nav ul li ul {
-    display: none;
+.slide-text {
     position: absolute;
-    top: 100%;
-    left: 0;
-    background: white;
-    border: 1px solid #ddd;
-    min-width: 150px;
-    z-index: 999;
-    padding: 5px 0;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-}
-nav ul li ul li {
-    padding: 8px 15px;
-    white-space: nowrap;
-}
-nav ul li ul li:hover {
-    background-color: #f5f5f5;
-}
-
-/* ----------- FOOTER ----------- */
-.site-footer {
-    background-color: #f9f9f9;
-    font-family: Arial, sans-serif;
-    padding: 30px 20px;
-    color: #333;
-}
-.footer-top {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    gap: 30px;
-}
-.footer-column {
-    flex: 1 1 220px;
-    min-width: 220px;
-}
-.footer-column h3 {
-    font-size: 16px;
-    font-weight: bold;
-    margin-bottom: 15px;
-}
-.footer-column ul {
-    list-style: none;
-    padding: 0;
-    line-height: 1.8;
-    font-size: 14px;
-}
-.footer-column p {
-    font-size: 14px;
-    margin: 8px 0;
-}
-.logo {
-    width: 120px;
-    margin-bottom: 10px;
-}
-.social-icons {
-    margin-top: 10px;
-}
-.social-icons a {
-    display: inline-block;
-    margin-right: 8px;
-    font-size: 20px;
-    color: #333;
-    transition: color 0.3s;
-}
-.social-icons a:hover {
-    color: #0073e6;
-}
-.footer-bottom {
-    margin-top: 30px;
-    border-top: 1px solid #ccc;
-    padding-top: 15px;
-    font-size: 13px;
+    z-index: 3;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     text-align: center;
-    color: #666;
+    color: white;
 }
-.fanpage iframe {
-    max-width: 100%;
+.slide-text h1 {
+    font-size: 3rem;
+    font-weight: 700;
+    text-shadow: 0 3px 12px rgba(0,0,0,0.6);
+    margin-bottom: 12px;
+}
+.slide-text p {
+    font-size: 1.25rem;
+    margin-bottom: 18px;
 }
 
-/* ----------- RESPONSIVE ----------- */
-@media (max-width: 992px) {
-    .col-md-3 {
-        flex: 0 0 50%;
-        max-width: 50%;
-    }
+/* Nút xem sản phẩm đẹp */
+.slide-btn {
+    background: #fff;
+    color: black;
+    padding: 12px 32px;
+    border-radius: 50px;
+    font-size: 1.1rem;
+    transition: .3s;
+    border: none;
 }
-@media (max-width: 768px) {
-    .footer-top {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-    .col-md-3 {
-        flex: 0 0 100%;
-        max-width: 100%;
-    }
+.slide-btn:hover {
+    background: #000;
+    color: #fff;
+    transform: translateY(-3px);
+}
+
+/* 💚 Nút thêm vào giỏ hàng hiện đại */
+.btn-add-cart {
+    background: linear-gradient(45deg, #28a745, #218838);
+    color: white;
+    font-weight: 600;
+    border: none;
+    border-radius: 50px;
+    padding: 12px 24px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 10px rgba(40, 167, 69, 0.3);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+.btn-add-cart:hover {
+    background: linear-gradient(45deg, #34d058, #28a745);
+    transform: translateY(-3px);
+    box-shadow: 0 6px 14px rgba(40, 167, 69, 0.5);
+}
+.btn-add-cart i {
+    transition: transform 0.3s;
+}
+.btn-add-cart:hover i {
+    transform: rotate(-15deg) scale(1.2);
 }

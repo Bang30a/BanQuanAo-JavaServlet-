@@ -2,6 +2,8 @@ package control;
 
 import dao.UsersDao;
 import entity.Users;
+import service.LoginResult; 
+import service.LoginService; 
 
 import java.io.IOException;
 import javax.servlet.ServletException;
@@ -11,11 +13,19 @@ import javax.servlet.http.*;
 @WebServlet("/login")
 public class LoginServlet extends HttpServlet {
 
+    private LoginService loginService;
+
+    @Override
+    public void init() throws ServletException {
+        UsersDao usersDao = new UsersDao();
+        this.loginService = new LoginService(usersDao);
+    }
+
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        // Chuyển hướng đến trang login
-        response.sendRedirect("Login.jsp");
+        // Chuyển hướng đến /user/Login.jsp thay vì /Login.jsp
+        response.sendRedirect(request.getContextPath() + "/user/Login.jsp");
     }
 
     @Override
@@ -23,42 +33,56 @@ public class LoginServlet extends HttpServlet {
             throws ServletException, IOException {
 
         request.setCharacterEncoding("UTF-8");
-
         String username = request.getParameter("username");
         String password = request.getParameter("password");
+        
+        HttpSession session = request.getSession(); // <-- Lấy session
 
-        UsersDao dao = new UsersDao();
-        Users user = dao.login(username, password);
+        LoginResult result = loginService.login(username, password);
 
-        if (user == null) {
-            request.setAttribute("error", "❌ Sai tên đăng nhập hoặc mật khẩu!");
-            request.getRequestDispatcher("Login.jsp").forward(request, response);
-        } else {
-            // Tạo session mới
-            HttpSession session = request.getSession(true);
-            session.setAttribute("user", user);
+        // Lấy URL cần quay lại (nếu có)
+        String redirectUrl = (String) session.getAttribute("redirectAfterLogin");
 
-            // Chuyển hướng theo vai trò
-            String role = user.getRole().toLowerCase();
-            switch (role) {
-                case "admin":
-                    response.sendRedirect(request.getContextPath() + "/admin/Dashboard.jsp");
-                    break;
-                case "user":
-                    response.sendRedirect(request.getContextPath() + "/user/View-products.jsp");
-                    break;
-                default:
-                    // Nếu có role lạ
-                    session.invalidate(); // Hủy session nếu không hợp lệ
-                    request.setAttribute("error", "Quyền truy cập không hợp lệ.");
-                    request.getRequestDispatcher("Login.jsp").forward(request, response);
-                    break;
-            }
+        switch (result.getStatus()) {
+            
+            case SUCCESS_ADMIN:
+                session.setAttribute("user", result.getUser());
+                
+                // Xóa lỗi (nếu có) và URL quay lại
+                session.removeAttribute("loginError");
+                session.removeAttribute("redirectAfterLogin");
+                
+                // Nếu admin cố thêm vào giỏ hàng, cũng chỉ về dashboard
+                response.sendRedirect(request.getContextPath() + "/admin/Dashboard.jsp");
+                break;
+                
+            case SUCCESS_USER:
+                session.setAttribute("user", result.getUser());
+                
+                // Xóa lỗi (nếu có) và URL quay lại
+                session.removeAttribute("loginError");
+                session.removeAttribute("redirectAfterLogin");
+
+                // --- LOGIC MỚI: QUAY LẠI TRANG SẢN PHẨM ---
+                if (redirectUrl != null && !redirectUrl.isEmpty()) {
+                    response.sendRedirect(redirectUrl); // Quay lại trang sản phẩm
+                } else {
+                    // Mặc định: Về trang chủ
+                    response.sendRedirect(request.getContextPath() + "/user/view-products");
+                }
+                break;
+
+            case FAILED_CREDENTIALS:
+                // Sửa lỗi: Gửi lỗi qua session (vì Login.jsp đang ở /user/)
+                // thay vì request.setAttribute
+                session.setAttribute("loginError", "❌ Sai tên đăng nhập hoặc mật khẩu!");
+                response.sendRedirect(request.getContextPath() + "/user/Login.jsp");
+                break;
+                
+            case FAILED_INVALID_ROLE:
+                session.setAttribute("loginError", "Quyền truy cập không hợp lệ.");
+                response.sendRedirect(request.getContextPath() + "/user/Login.jsp");
+                break;
         }
-    }
-
-    @Override
-    public String getServletInfo() {
-        return "Xử lý đăng nhập người dùng và phân quyền truy cập.";
     }
 }

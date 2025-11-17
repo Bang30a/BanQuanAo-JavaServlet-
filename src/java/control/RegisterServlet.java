@@ -14,7 +14,7 @@ public class RegisterServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        response.sendRedirect("Register.jsp");
+        response.sendRedirect(request.getContextPath() + "/user/Register.jsp");
     }
 
     @Override
@@ -29,23 +29,32 @@ public class RegisterServlet extends HttpServlet {
         String fullname = request.getParameter("fullname");
         String email = request.getParameter("email");
 
-        UsersDao dao = new UsersDao();
+        HttpSession session = request.getSession();
+        UsersDao dao = createDao();
 
         if (dao.checkUserExists(username)) {
-            request.setAttribute("error", "Tên đăng nhập đã tồn tại!");
-            request.getRequestDispatcher("Register.jsp").forward(request, response);
-        } else {
-            // Tùy ý thêm mã hóa mật khẩu tại đây nếu muốn bảo mật hơn
-            Users newUser = new Users(username, password, fullname, email, "user");
-
-            boolean success = dao.register(newUser);
-            if (success) {
-                response.sendRedirect(request.getContextPath() + "/user/Login.jsp");
-            } else {
-                request.setAttribute("error", "Đăng ký thất bại. Vui lòng thử lại.");
-                request.getRequestDispatcher("Register.jsp").forward(request, response);
-            }
+            // ❌ Tên đăng nhập trùng
+            session.setAttribute("registerError", "⚠️ Tên đăng nhập đã tồn tại!");
+            response.sendRedirect(request.getContextPath() + "/user/Register.jsp");
+            return;
         }
+
+        Users newUser = new Users(username, password, fullname, email, "user");
+        boolean success = dao.register(newUser);
+
+        if (success) {
+            // ✅ Đăng ký thành công
+            session.setAttribute("registerSuccess", "🎉 Đăng ký thành công! Vui lòng đăng nhập.");
+            response.sendRedirect(request.getContextPath() + "/user/Login.jsp");
+        } else {
+            // ❌ Lỗi không xác định
+            session.setAttribute("registerError", "❌ Đăng ký thất bại. Vui lòng thử lại!");
+            response.sendRedirect(request.getContextPath() + "/user/Register.jsp");
+        }
+    }
+
+    protected UsersDao createDao() {
+        return new UsersDao();
     }
 
     @Override

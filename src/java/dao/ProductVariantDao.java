@@ -43,10 +43,44 @@ public class ProductVariantDao {
         v.setProductId(rs.getInt("product_id"));
         v.setSizeId(rs.getInt("size_id"));
         v.setStock(rs.getInt("stock"));
-        v.setProductName(rs.getString("productName"));
-        v.setSizeName(rs.getString("sizeName"));
-        v.setPrice(rs.getDouble("price"));
+        // Check if columns exist before getting them to avoid errors in simple select queries
+        try { v.setProductName(rs.getString("productName")); } catch (SQLException e) {}
+        try { v.setSizeName(rs.getString("sizeName")); } catch (SQLException e) {}
+        try { v.setPrice(rs.getDouble("price")); } catch (SQLException e) {}
         return v;
+    }
+
+    // [MỚI] Kiểm tra biến thể tồn tại (dùng cho logic cộng dồn)
+    public ProductVariants checkExist(int productId, int sizeId) {
+        String sql = "SELECT * FROM ProductVariants WHERE product_id = ? AND size_id = ?";
+        
+        Connection conn = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+
+        try {
+            conn = getConnection();
+            ps = conn.prepareStatement(sql);
+            ps.setInt(1, productId);
+            ps.setInt(2, sizeId);
+            rs = ps.executeQuery();
+            
+            if (rs.next()) {
+                // Chỉ cần lấy thông tin cơ bản để biết ID và Stock cũ
+                ProductVariants v = new ProductVariants();
+                v.setId(rs.getInt("id"));
+                v.setProductId(rs.getInt("product_id"));
+                v.setSizeId(rs.getInt("size_id"));
+                v.setStock(rs.getInt("stock"));
+                return v;
+            }
+        } catch (Exception e) {
+            System.err.println("❌ Lỗi khi check exist:");
+            e.printStackTrace();
+        } finally {
+            closeResources(conn, ps, rs);
+        }
+        return null;
     }
 
     // Lấy tất cả biến thể

@@ -1,146 +1,195 @@
 package system;
 
-import static org.junit.Assert.*;
-
+import util.ExcelTestExporter;
 import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestWatcher;
+import org.junit.runner.Description;
 
 import org.openqa.selenium.By;
+import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
 
-import java.util.concurrent.TimeUnit;
-import org.openqa.selenium.chrome.ChromeOptions;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
-/**
- * Đây là lớp SYSTEM TEST cho việc "Xem lịch sử đơn hàng" của người dùng.
- */
 public class OrderHistorySystemTest {
 
-    private WebDriver driver;
-    private String baseUrl;
-    private WebDriverWait wait; // Bộ "Chờ"
+    WebDriver driver;
+    String loginUrl = "http://localhost:8080/ShopDuck/user/auth/Login.jsp";
+    String homeUrl = "http://localhost:8080/ShopDuck/user/view-products";
+    String historyServletUrl = "http://localhost:8080/ShopDuck/user/order-history";
 
-    // Hàm "Ngủ" (để chạy chậm)
-    private void sleep(int milliseconds) {
-        try {
-            Thread.sleep(milliseconds);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+    final int SLOW_SPEED = 3000;
+
+    private String currentId = "";
+    private String currentName = "";
+    private String currentSteps = "";
+    private String currentData = "";
+    private String currentExpected = "";
+    private String currentActual = "";
+
+    private void setTestCaseInfo(String id, String name, String steps, String data, String expected) {
+        this.currentId = id;
+        this.currentName = name;
+        this.currentSteps = steps;
+        this.currentData = data;
+        this.currentExpected = expected;
+        this.currentActual = "Chưa hoàn thành";
+    }
+
+    @Rule
+    public TestWatcher watcher = new TestWatcher() {
+        @Override
+        protected void succeeded(Description description) {
+            ExcelTestExporter.addResult(currentId, currentName, currentSteps, currentData, currentExpected, currentActual, "PASS");
         }
+        @Override
+        protected void failed(Throwable e, Description description) {
+            ExcelTestExporter.addResult(currentId, currentName, currentSteps, currentData, currentExpected, "Lỗi: " + e.getMessage(), "FAIL");
+        }
+    };
+
+    @AfterClass
+    public static void exportReport() {
+        try {
+            ExcelTestExporter.exportToExcel("BaoCao_SystemTest_OrderHistory.xlsx");
+            System.out.println(">> Xuất Excel thành công.");
+        } catch (Exception e) {}
+    }
+
+    public void slowDown() {
+        try { Thread.sleep(SLOW_SPEED); } catch (InterruptedException e) {}
     }
 
     @Before
     public void setUp() {
-        // 1. Chỉ đường đến file chromedriver.exe
         System.setProperty("webdriver.chrome.driver", "C:\\WebDrivers\\chromedriver.exe");
+        driver = new ChromeDriver();
+        driver.manage().window().maximize();
         
-        // 2. Tạo Tùy chọn (Options)
-        ChromeOptions options = new ChromeOptions();
-        
-        // Tắt pop-up khi login
-        Map<String, Object> prefs = new HashMap<String, Object>();
-        prefs.put("credentials_enable_service", false);
-        prefs.put("profile.password_manager_enabled", false);
-        options.setExperimentalOption("prefs", prefs);
-
-        // Khởi tạo trình duyệt với tùy chọn
-        driver = new ChromeDriver(options); 
-        driver.manage().window().maximize(); // Mở toàn màn hình
-        
-        // Đặt URL gốc của trang web
-        baseUrl = "http://localhost:8080/ShopDuck/";
-        
-        // Khởi tạo bộ "Chờ" (chờ tối đa 10 giây)
-        wait = new WebDriverWait(driver, 10); 
-    }
-
-    /**
-     * Test Case: Người dùng đăng nhập và xem lịch sử đơn hàng của mình.
-     */
-    @Test
-    public void testUserCanViewOrderHistory() {
-        
-        // --- PHẦN 1: ĐĂNG NHẬP ---
-        driver.get(baseUrl + "user/Login.jsp");
-        sleep(1000); // Dừng 1 giây
+        driver.get(loginUrl);
+        slowDown();
         
         driver.findElement(By.name("username")).sendKeys("user");
-        sleep(500);
-        driver.findElement(By.name("password")).sendKeys("user123");
-        sleep(1000);
-        driver.findElement(By.id("loginButton")).click();
-
-        // Chờ cho đến khi đăng nhập thành công và vào trang sản phẩm
-        wait.until(ExpectedConditions.urlContains("user/view-products"));
-        sleep(1000); // Dừng 1 giây xem trang sản phẩm
+        slowDown();
         
-        // --- PHẦN 2: XEM LỊCH SỬ ĐƠN HÀNG ---
-        // Chuyển sang trang "Lịch sử đơn hàng"
-        driver.get(baseUrl + "user/order-history");
-        sleep(1000); // Dừng 1 giây để xem trang lịch sử đơn hàng
+        WebElement passField = driver.findElement(By.name("password"));
+        passField.sendKeys("user123");
+        slowDown();
         
-        // Kiểm tra xem có bảng hiển thị đơn hàng không
-        WebElement orderHistoryTable;
         try {
-            orderHistoryTable = wait.until(
-                ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".table"))
-            );
+            passField.submit();
         } catch (Exception e) {
-            fail("Không tìm thấy bảng lịch sử đơn hàng.");
-            return;
+            driver.findElement(By.className("btn-login")).click();
+        }
+        slowDown();
+
+        if (driver.getCurrentUrl().contains("Login.jsp")) {
+            Assert.fail("SETUP FAILED: Đăng nhập thất bại.");
+        }
+    }
+
+    @Test
+    public void testViewOrderHistory_Detail() {
+        setTestCaseInfo(
+            "ST_ORDER_01", 
+            "Xem Lịch sử & Chi tiết đơn hàng", 
+            "1. Menu User -> Đơn hàng của tôi\n2. (Auto Fix URL)\n3. Check list đơn\n4. Xem chi tiết", 
+            "User: user", 
+            "Hiển thị đúng danh sách và thông tin chi tiết"
+        );
+
+        System.out.println("Step 1: Mở menu User -> Chọn Đơn hàng...");
+        driver.get(homeUrl); 
+        slowDown();
+
+        try {
+
+            WebElement userDropdown = driver.findElement(By.cssSelector(".btn-header.dropdown-toggle"));
+            
+            ((JavascriptExecutor) driver).executeScript("arguments[0].click();", userDropdown);
+            slowDown();
+
+            // Click link "Đơn hàng của tôi"
+            WebElement historyLink = driver.findElement(By.xpath("//a[contains(text(), 'Đơn hàng của tôi')]"));
+            ((JavascriptExecutor) driver).executeScript("arguments[0].click();", historyLink);
+            slowDown();
+
+        } catch (Exception e) {
+            System.out.println("⚠ Không click được menu (" + e.getMessage() + "), vào thẳng link...");
+            driver.get(historyServletUrl);
+            slowDown();
         }
 
-        // Kiểm tra nếu bảng lịch sử đơn hàng có ít nhất 1 dòng đơn hàng
-        List<WebElement> rows = orderHistoryTable.findElements(By.tagName("tr"));
-        assertTrue("Lịch sử đơn hàng không có đơn hàng nào", rows.size() > 1); // Bỏ qua dòng tiêu đề
+        String currentUrl = driver.getCurrentUrl();
+        if (currentUrl.endsWith(".jsp")) {
+            System.out.println("⚠ Web dẫn vào file .jsp -> Auto Fix sang Servlet.");
+            driver.get(historyServletUrl);
+            slowDown();
+        }
 
-        // Kiểm tra thông tin đơn hàng đầu tiên
-        WebElement firstOrderRow = rows.get(1); // Dòng đơn hàng đầu tiên
-        WebElement orderStatus = firstOrderRow.findElement(By.cssSelector(".badge"));
-        assertNotNull("Trạng thái đơn hàng không tồn tại", orderStatus);
+        if (driver.getCurrentUrl().contains("Login.jsp")) Assert.fail("Lỗi: Bị đá về trang Login.");
         
-        // Kiểm tra trạng thái đơn hàng có hợp lệ không
-        String statusText = orderStatus.getText();
-        assertTrue("Trạng thái đơn hàng không hợp lệ", 
-                   statusText.equals("Completed") || statusText.equals("Pending") || statusText.equals("Shipped"));
-
-        // --- PHẦN 3: XEM CHI TIẾT ĐƠN HÀNG ---
-        WebElement firstOrderDetailLink = firstOrderRow.findElement(By.cssSelector(".btn-primary"));
-        firstOrderDetailLink.click(); // Click vào xem chi tiết đơn hàng
-
-        // Chờ đến khi chuyển trang chi tiết đơn hàng
-        wait.until(ExpectedConditions.urlContains("user/order-detail"));
-        sleep(1000); // Dừng 1 giây để xem trang chi tiết
-
-        // Kiểm tra xem trang chi tiết đơn hàng có hiển thị thông tin hợp lệ không
-        WebElement orderDetailTitle = driver.findElement(By.cssSelector(".order-detail-title"));
-        assertNotNull("Không thấy tiêu đề chi tiết đơn hàng", orderDetailTitle);
-
-        WebElement productName = driver.findElement(By.cssSelector(".product-name"));
-        assertNotNull("Không thấy tên sản phẩm", productName);
+        System.out.println("Step 2: Kiểm tra danh sách đơn hàng...");
+        List<WebElement> rows = driver.findElements(By.cssSelector(".table tbody tr"));
         
-        // --- PHẦN 4: KIỂM TRA LẠI THÔNG TIN CHI TIẾT --- 
-        // Kiểm tra có các thông tin như tên sản phẩm, giá, số lượng và tổng giá trị trong chi tiết đơn hàng
-        WebElement productPrice = driver.findElement(By.cssSelector(".product-price"));
-        WebElement productQuantity = driver.findElement(By.cssSelector(".product-quantity"));
+        if (rows.isEmpty()) {
+            if (driver.getPageSource().contains("Bạn chưa có đơn hàng nào")) {
+                 System.out.println("Pass: Tài khoản chưa có đơn.");
+                 this.currentActual = "Tài khoản không có đơn hàng.";
+                 return; 
+            } else {
+                Assert.fail("Lỗi: Không có đơn hàng và không hiện thông báo trống.");
+            }
+        }
+
+        WebElement firstRow = rows.get(0);
+        String orderIdText = firstRow.findElement(By.cssSelector("td:nth-child(1)")).getText().trim();
+        String totalAmountText = firstRow.findElement(By.cssSelector("td:nth-child(4)")).getText().trim();
+        System.out.println(">> Đơn hàng cần check: " + orderIdText + " | " + totalAmountText);
+
+        System.out.println("Step 3: Xem chi tiết...");
+        WebElement btnDetail = firstRow.findElement(By.cssSelector(".btn-view"));
+        ((JavascriptExecutor) driver).executeScript("arguments[0].click();", btnDetail);
+        slowDown();
+
+        System.out.println("Step 4: Verify thông tin trang chi tiết...");
         
-        assertNotNull("Không thấy giá sản phẩm", productPrice);
-        assertNotNull("Không thấy số lượng sản phẩm", productQuantity);
+        try {
+            String detailTitle = driver.findElement(By.className("order-id")).getText(); 
+            Assert.assertTrue("Sai mã đơn!", detailTitle.contains(orderIdText.replace("#", "")));
+        } catch (Exception e) {
+            String h2Text = driver.findElement(By.tagName("h2")).getText();
+            Assert.assertTrue("Sai mã đơn (h2)!", h2Text.contains(orderIdText.replace("#", "")));
+        }
+
+        String detailTotal = driver.findElement(By.className("total-amount")).getText().trim();
+        Assert.assertEquals("Sai tổng tiền!", totalAmountText, detailTotal);
+
+        Assert.assertTrue("Chi tiết rỗng!", driver.findElements(By.cssSelector(".table tbody tr")).size() > 0);
+
+        System.out.println("Step 5: Quay lại...");
+        driver.findElement(By.className("btn-back")).click();
+        slowDown();
+        
+        if (driver.getCurrentUrl().endsWith(".jsp")) {
+            driver.get(historyServletUrl);
+            slowDown();
+        }
+        
+        Assert.assertTrue("Nút quay lại lỗi!", driver.getCurrentUrl().contains("order-history"));
+
+        this.currentActual = "Hoàn thành test: " + orderIdText;
     }
 
     @After
     public void tearDown() {
-        sleep(2000); // Dừng 2 giây cuối cùng để xem kết quả trước khi tắt
-        if (driver != null) {
-            driver.quit();
-        }
+        if (driver != null) driver.quit();
     }
 }

@@ -1,0 +1,6 @@
+﻿ID,Tên Test Case,Các bước thực hiện,Dữ liệu đầu vào,Kết quả mong đợi,Kết quả thực tế,Trạng thái
+CART_SVC_02,Service: Cộng dồn SP cũ,Giỏ có P1(2) -> Thêm P1(3),"P1, Qty=3","Size=1, Qty=5",OK,PASS
+CART_SVC_04,Service: Xóa SP theo index,"Giỏ [P1, P2] -> Xóa index 0",Index=0,"Size=1, Còn P2",OK,PASS
+CART_SVC_05,Service: Update về 0 -> Xóa,Giỏ có P1 -> Update P1 = 0,Qty=0,Size=0,OK,PASS
+CART_SVC_01,Service: Thêm mới SP,Giỏ rỗng -> Thêm P1 (SL: 2),"P1, Qty=2","Size=1, Qty=2",OK,PASS
+CART_SVC_03,Service: Tính tổng tiền,P1($100 * 2) + P2($200 * 1),Data setup,Total=400.0,OK,PASS

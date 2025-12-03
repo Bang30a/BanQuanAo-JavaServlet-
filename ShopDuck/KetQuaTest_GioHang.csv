@@ -1,0 +1,22 @@
+﻿ID,Tên Test Case,Các bước thực hiện,Dữ liệu đầu vào,Kết quả mong đợi,Kết quả thực tế,Trạng thái
+CART_01,Thêm mới sản phẩm vào giỏ,"1. Giỏ rỗng
+2. Thêm SP1 (SL: 2)","SP1 (ID=1, Giá=10)
+Số lượng: 2","Giỏ có 1 SP, SL=2","Giỏ có 1 SP, SL=2",PASS
+CART_08,Xóa sản phẩm theo vị trí (Index),Xóa phần tử tại index 0,"Giỏ: [SP1, SP2]
+Xóa index 0",Còn lại SP2,Còn lại SP2,PASS
+CART_02,Cộng dồn số lượng sản phẩm cũ,"1. Có sẵn SP1 (SL: 2)
+2. Thêm tiếp SP1 (SL: 3)","SP1
+Số lượng thêm: 3","Giỏ vẫn 1 SP, SL tổng=5","Giỏ vẫn 1 SP, SL tổng=5",PASS
+CART_03,Thêm nhiều loại sản phẩm khác nhau,"1. Có SP1
+2. Thêm SP2","SP1 (SL:2)
+SP2 (SL:1)",Giỏ có 2 dòng sản phẩm,Giỏ có 2 dòng sản phẩm,PASS
+CART_07,Xóa SP khi cập nhật số lượng âm,Update ID 1 thành -5,"ID: 1
+New Qty: -5",Sản phẩm bị xóa khỏi giỏ,Sản phẩm bị xóa khỏi giỏ,PASS
+CART_10,Tính tiền khi giỏ rỗng,Giỏ không có sp nào,Cart empty,Tổng = 0.0,Tổng = 0.0,PASS
+CART_04,Xử lý khi giỏ hàng bị Null,Truyền vào list giỏ hàng là null,"Cart = null
+SP1, SL:1",Tự khởi tạo giỏ mới,Tự khởi tạo giỏ mới,PASS
+CART_06,Xóa SP khi cập nhật số lượng về 0,Update ID 1 thành 0,"ID: 1
+New Qty: 0",Sản phẩm bị xóa khỏi giỏ,Sản phẩm bị xóa khỏi giỏ,PASS
+CART_05,Cập nhật số lượng (Tăng/Giảm),Update ID 1 thành 5,"ID: 1
+New Qty: 5",Qty cập nhật thành 5,Qty cập nhật thành 5,PASS
+CART_09,Tính tổng tiền giỏ hàng,2 SP1 ($10) + 3 SP2 ($5),2*10 + 3*5,Tổng = 35.0,Tổng = 35.0,PASS

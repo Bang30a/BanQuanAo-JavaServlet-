@@ -1,169 +1,236 @@
-// Đặt trong "Test Packages/system/"
 package system;
 
-// === IMPORT JUNIT ===
+import util.ExcelTestExporter;
 import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
-import static org.junit.Assert.*;
+import org.junit.rules.TestWatcher;
+import org.junit.runner.Description;
 
-// === IMPORT SELENIUM ===
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.chrome.ChromeOptions;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-// === IMPORT ĐỂ "CHỜ" ===
-import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
-// ===================================
+import org.openqa.selenium.support.ui.Select;
 
-/**
- * Đây là lớp SYSTEM TEST (Kiểm thử Hệ thống) cho luồng "Thanh toán".
- * (Phiên bản chạy chậm để quan sát)
- */
 public class CheckoutSystemTest {
 
-    private WebDriver driver;
-    private String baseUrl;
-    private WebDriverWait wait; // Bộ "Chờ"
+    WebDriver driver;
+    String loginUrl = "http://localhost:8080/ShopDuck/user/auth/Login.jsp";
+    String homeUrl = "http://localhost:8080/ShopDuck/user/view-products";
+    // Chúng ta sẽ không dùng driver.get(cartUrl) hay checkoutUrl trực tiếp nữa
+    // Mà sẽ click chuột để đi tới đó.
 
-    // Hàm "Ngủ" (để chạy chậm)
-    private void sleep(int milliseconds) {
-        try {
-            Thread.sleep(milliseconds);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+    // [CẤU HÌNH] Tốc độ test chậm (3 giây) để dễ quan sát
+    final int SLOW_SPEED = 3000;
+
+    // --- BIẾN BÁO CÁO EXCEL ---
+    private String currentId = "";
+    private String currentName = "";
+    private String currentSteps = "";
+    private String currentData = "";
+    private String currentExpected = "";
+    private String currentActual = "";
+
+    private void setTestCaseInfo(String id, String name, String steps, String data, String expected) {
+        this.currentId = id;
+        this.currentName = name;
+        this.currentSteps = steps;
+        this.currentData = data;
+        this.currentExpected = expected;
+        this.currentActual = "Chưa hoàn thành";
+    }
+
+    @Rule
+    public TestWatcher watcher = new TestWatcher() {
+        @Override
+        protected void succeeded(Description description) {
+            ExcelTestExporter.addResult(currentId, currentName, currentSteps, currentData, currentExpected, currentActual, "PASS");
         }
+        @Override
+        protected void failed(Throwable e, Description description) {
+            ExcelTestExporter.addResult(currentId, currentName, currentSteps, currentData, currentExpected, "Lỗi: " + e.getMessage(), "FAIL");
+        }
+    };
+
+    @AfterClass
+    public static void exportReport() {
+        ExcelTestExporter.exportToExcel("BaoCao_SystemTest_Checkout.xlsx");
+        System.out.println(">> Xuất Excel thành công: BaoCao_SystemTest_Checkout.xlsx");
+    }
+
+    // Hàm làm chậm
+    public void slowDown() {
+        try { Thread.sleep(SLOW_SPEED); } catch (InterruptedException e) {}
     }
 
     @Before
     public void setUp() {
         System.setProperty("webdriver.chrome.driver", "C:\\WebDrivers\\chromedriver.exe");
+        driver = new ChromeDriver();
+        driver.manage().window().maximize();
         
-        ChromeOptions options = new ChromeOptions();
-        Map<String, Object> prefs = new HashMap<String, Object>();
-        prefs.put("credentials_enable_service", false);
-        prefs.put("profile.password_manager_enabled", false);
-        options.setExperimentalOption("prefs", prefs);
-        
-        driver = new ChromeDriver(options);
-        driver.manage().window().maximize(); 
-        baseUrl = "http://localhost:8080/ShopDuck/";
-        wait = new WebDriverWait(driver, 10); 
-    }
-
-
-    /**
-     * Test Case: Đăng nhập -> Thêm vào giỏ -> Điền thông tin -> Đặt hàng
-     */
-    @Test
-    public void testFullCheckoutFlow() {
-        
-        // --- PHẦN 1: ĐĂNG NHẬP ---
-        driver.get(baseUrl + "user/Login.jsp");
-        sleep(1000);
+        // 1. Đăng nhập trước
+        driver.get(loginUrl);
+        slowDown();
         
         driver.findElement(By.name("username")).sendKeys("user");
-        driver.findElement(By.name("password")).sendKeys("user123");
-        driver.findElement(By.id("loginButton")).click();
-        wait.until(ExpectedConditions.urlContains("user/view-products"));
+        slowDown();
         
-        
-        // --- PHẦN 2: THÊM VÀO GIỎ HÀNG ---
+        WebElement passField = driver.findElement(By.name("password"));
+        passField.sendKeys("user123");
+        slowDown();
+
+        // [FIX LOGIN] Dùng submit() để tránh click nhầm
         try {
-            // Nhấp vào sản phẩm đầu tiên
-            wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(".card a"))).click();
-            sleep(1000);
-            
-            // Nhấp nút Thêm vào giỏ
-            wait.until(ExpectedConditions.elementToBeClickable(By.className("btn-add-cart"))).click();
-            sleep(1000);
-            
-            // Chờ thông báo thành công
-            wait.until(ExpectedConditions.visibilityOfElementLocated(By.className("alert-success")));
-            
+            passField.submit();
         } catch (Exception e) {
-            fail("Lỗi ở bước Thêm vào giỏ. Test thất bại. " + e.getMessage());
-            return;
+            driver.findElement(By.cssSelector(".btn-login")).click();
         }
+        slowDown();
 
-        // --- PHẦN 3: ĐI ĐẾN TRANG THANH TOÁN ---
+        // 2. Thêm hàng vào giỏ để chuẩn bị test
+        addToCartForSetup();
+    }
+
+    // Hàm thêm hàng nhanh (để đảm bảo giỏ không trống)
+    private void addToCartForSetup() {
+        driver.get(homeUrl);
+        slowDown();
         try {
-            // Tìm nút "Giỏ hàng" 
-            WebElement cartLink = driver.findElement(By.cssSelector("a[href*='view-cart.jsp']"));
-            cartLink.click();
-            
-            // Chờ trang giỏ hàng (view-cart.jsp) tải
-            wait.until(ExpectedConditions.urlContains("user/view-cart.jsp"));
-            sleep(1000);
-            
-            // Tìm nút "Thanh toán" 
-            WebElement checkoutButton = driver.findElement(By.className("cart-btn-success"));
-            checkoutButton.click();
-            
-            // Chờ trang thanh toán (Checkout.jsp) tải
-            wait.until(ExpectedConditions.urlContains("user/checkout")); 
-            sleep(1000);
-
+            // Click vào sản phẩm đầu tiên
+            driver.findElement(By.cssSelector(".product-card .product-img-wrap")).click();
+            slowDown();
+            // Chọn Size (nếu có)
+            if (driver.findElements(By.id("variantSelect")).size() > 0) {
+                new Select(driver.findElement(By.id("variantSelect"))).selectByIndex(1);
+            }
+            // Click nút Thêm
+            driver.findElement(By.className("btn-add-cart")).click();
+            slowDown();
         } catch (Exception e) {
-            fail("Lỗi ở bước đi đến trang thanh toán. " + e.getMessage());
-            return;
-        }
-        
-        // --- PHẦN 4: ĐIỀN FORM VÀ ĐẶT HÀNG ---
-        try {
-            WebElement addressInput = driver.findElement(By.name("address"));
-            WebElement phoneInput = driver.findElement(By.name("phone"));
-            
-            // Tìm nút "Xác nhận đặt hàng" 
-            WebElement confirmButton = driver.findElement(By.cssSelector("button.btn-confirm"));
-
-            // Điền thông tin
-            addressInput.sendKeys("123 Đường Test, Quận 1, TP.HCM");
-            sleep(500);
-            phoneInput.sendKeys("0987654321");
-            sleep(1000);
-            
-            // Nhấn nút Xác nhận
-            confirmButton.click();
-            
-        } catch (Exception e) {
-            fail("Lỗi ở bước điền form. " + e.getMessage());
-            return;
-        }
-        
-        // --- PHẦN 5: XÁC MINH KẾT QUẢ (ĐÃ SỬA) ---
-        try {
-            // Sửa 1: Chờ trang đích thực tế của ứng dụng (view-products)
-            wait.until(ExpectedConditions.urlContains("user/view-products?success=true"));
-            sleep(1000);
-
-            // Sửa 2: Tìm thông báo thành công trên trang view-products
-            WebElement successAlert = wait.until(
-                ExpectedConditions.visibilityOfElementLocated(By.className("alert-success"))
-            );
-            
-            assertTrue("Phải hiển thị thông báo đặt hàng thành công",
-                        successAlert.getText().contains("Đặt hàng thành công"));
-            
-        } catch (Exception e) {
-            // Nếu không tìm thấy, báo lỗi và in ra URL thực tế
-            fail("Đặt hàng thất bại. Không tìm thấy thông báo 'Đặt hàng thành công' trên trang đích. URL hiện tại: " + driver.getCurrentUrl());
+            System.out.println("Setup: Giỏ hàng có thể đã có sẵn hàng hoặc lỗi setup.");
         }
     }
 
+    // ================================================================
+    // CÁC TEST CASE ĐẶT HÀNG (LUỒNG CHUẨN)
+    // ================================================================
 
-    // === CHẠY SAU KHI TẤT CẢ TEST HOÀN THÀNH ===
+    // --- CASE 1: ĐẶT HÀNG THÀNH CÔNG (Happy Path) ---
+    @Test
+    public void testCheckout_Success() {
+        setTestCaseInfo(
+            "ST_CHECKOUT_01", 
+            "Đặt hàng thành công (Luồng chuẩn)", 
+            "1. Click icon Giỏ hàng\n2. Click nút 'Thanh toán'\n3. Điền info & Submit", 
+            "Đ/c: 123 Hanoi, SĐT: 0987654321", 
+            "Chuyển về trang chủ & URL có '?success=true'"
+        );
+
+        // 1. Từ trang hiện tại, click vào Icon Giỏ hàng trên Header
+        try {
+            System.out.println("Step 1: Click icon Giỏ hàng...");
+            WebElement cartIcon = driver.findElement(By.cssSelector(".btn-cart")); 
+            cartIcon.click();
+        } catch (Exception e) {
+            Assert.fail("Không tìm thấy icon Giỏ hàng trên Header!");
+        }
+        slowDown();
+
+        // 2. Tại trang Giỏ hàng, click nút "Thanh toán"
+        try {
+            System.out.println("Step 2: Click nút Thanh toán...");
+            WebElement checkoutBtn = driver.findElement(By.cssSelector(".btn-checkout"));
+            checkoutBtn.click();
+        } catch (Exception e) {
+            Assert.fail("Không tìm thấy nút 'Thanh toán' trong giỏ hàng (Hoặc giỏ hàng rỗng)!");
+        }
+        slowDown();
+
+        // Kiểm tra xem đã vào đúng trang Checkout chưa
+        String currentUrl = driver.getCurrentUrl();
+        Assert.assertTrue("Chưa vào được trang Checkout!", currentUrl.contains("checkout"));
+
+        // 3. Điền thông tin giao hàng
+        System.out.println("Step 3: Điền thông tin...");
+        WebElement addressInput = driver.findElement(By.name("address"));
+        WebElement phoneInput = driver.findElement(By.name("phone"));
+
+        addressInput.clear();
+        addressInput.sendKeys("123 Đường Test, Quận Selenium, TP Java");
+        
+        phoneInput.clear();
+        phoneInput.sendKeys("0987654321");
+        
+        slowDown();
+
+        // 4. Click nút Xác nhận Đặt hàng
+        WebElement confirmBtn = driver.findElement(By.className("btn-confirm"));
+        confirmBtn.click();
+        
+        // Chờ Server xử lý lâu hơn chút (5s)
+        try { Thread.sleep(5000); } catch (InterruptedException e) {}
+
+        // 5. Kiểm tra kết quả
+        currentUrl = driver.getCurrentUrl();
+        this.currentActual = "URL sau khi đặt: " + currentUrl;
+
+        // Servlet redirect về: /user/view-products?success=true
+        Assert.assertTrue("Không chuyển về trang chủ!", currentUrl.contains("view-products"));
+        Assert.assertTrue("Không có tham số success=true!", currentUrl.contains("success=true"));
+        
+        boolean hasSuccessMsg = driver.findElements(By.className("alert-success")).size() > 0;
+        Assert.assertTrue("Không hiện thông báo 'Đặt hàng thành công'!", hasSuccessMsg);
+    }
+
+    // --- CASE 2: ĐẶT HÀNG THẤT BẠI (Thiếu thông tin) ---
+    @Test
+    public void testCheckout_Fail_MissingInfo() {
+        setTestCaseInfo(
+            "ST_CHECKOUT_02", 
+            "Bỏ trống thông tin giao hàng", 
+            "1. Vào Giỏ -> Thanh toán\n2. Để trống Đ/c & SĐT\n3. Click Đặt hàng", 
+            "Input: Rỗng", 
+            "Trình duyệt chặn submit hoặc hiện lỗi"
+        );
+
+        // 1. Đi luồng: Header -> Giỏ hàng -> Thanh toán
+        driver.findElement(By.cssSelector(".btn-cart")).click();
+        slowDown();
+        
+        try {
+            driver.findElement(By.cssSelector(".btn-checkout")).click();
+        } catch(Exception e) {
+            Assert.fail("Không thấy nút Thanh toán (Giỏ rỗng?)");
+        }
+        slowDown();
+
+        // 2. Xóa sạch dữ liệu (Cố tình để trống)
+        WebElement addressInput = driver.findElement(By.name("address"));
+        WebElement phoneInput = driver.findElement(By.name("phone"));
+        addressInput.clear();
+        phoneInput.clear();
+        slowDown();
+
+        // 3. Click nút Đặt hàng
+        WebElement confirmBtn = driver.findElement(By.className("btn-confirm"));
+        confirmBtn.click();
+        slowDown();
+
+        // Kiểm tra
+        String currentUrl = driver.getCurrentUrl();
+        this.currentActual = "URL: " + currentUrl;
+
+        // URL vẫn phải là trang checkout (vì chưa thành công)
+        Assert.assertTrue("Trang bị chuyển đi nơi khác!", currentUrl.contains("checkout"));
+    }
+
     @After
     public void tearDown() {
-        sleep(2000); 
-        
-        if (driver != null) {
-            driver.quit();
-        }
+        if (driver != null) driver.quit();
     }
 }

@@ -1,0 +1,11 @@
+﻿ID,Tên Test Case,Các bước thực hiện,Dữ liệu đầu vào,Kết quả mong đợi,Kết quả thực tế,Trạng thái
+TC04,Lỗi phân quyền (Role),1. Đăng nhập nick Guest,User: guest,FAILED_INVALID_ROLE,FAILED_INVALID_ROLE,PASS
+TC01,Đăng nhập Admin thành công,"1. Nhập User/Pass đúng
+2. Bấm Login","User: admin
+Pass: 123",SUCCESS_ADMIN,SUCCESS_ADMIN,PASS
+TC03,Đăng nhập sai mật khẩu,"1. Nhập sai Pass
+2. Bấm Login","User: wrong
+Pass: wrong",FAILED_CREDENTIALS,FAILED_CREDENTIALS,PASS
+TC02,Đăng nhập User thành công,"1. Nhập User/Pass đúng
+2. Bấm Login","User: wrong
+Pass: wrong",SUCCESS_USER,SUCCESS_USER,PASS

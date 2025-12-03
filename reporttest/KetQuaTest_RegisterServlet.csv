@@ -1,0 +1,6 @@
+﻿ID,Tên Test Case,Các bước thực hiện,Dữ liệu đầu vào,Kết quả mong đợi,Kết quả thực tế,Trạng thái
+REG_SERV_03,Servlet: Lỗi Database,1. Mock DAO register=false,User: valid,Redirect: Register.jsp + Error,OK,PASS
+REG_SERV_02,Servlet: Trùng tên đăng nhập,1. Mock DAO checkExists=true,User: exist,Redirect: Register.jsp + Error,OK,PASS
+REG_SERV_01,Servlet: Đăng ký thành công,"1. Mock input
+2. Mock DAO register=true
+3. Call doPost","User: new, Pass: 123",Redirect: Login.jsp,OK,PASS

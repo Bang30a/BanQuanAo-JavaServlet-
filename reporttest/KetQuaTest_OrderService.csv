@@ -1,0 +1,8 @@
+﻿ID,Tên Test Case,Các bước thực hiện,Dữ liệu đầu vào,Kết quả mong đợi,Kết quả thực tế,Trạng thái
+"ORD_SVC_04","Chưa đăng nhập","User object null","User=null","Result: NOT_LOGGED_IN","OK","PASS"
+"ORD_SVC_02","Lỗi thêm chi tiết -> Rollback","1. Add Order OK
+2. Add Detail FALSE","Cart: 1 item","Result: DETAIL_FAILED & Rollback","OK","PASS"
+"ORD_SVC_03","Giỏ hàng rỗng","Cart list empty","Cart=[]","Result: EMPTY_CART","OK","PASS"
+"ORD_SVC_01","Đặt hàng thành công","1. Add Order OK
+2. Add Detail OK
+3. Commit","Cart: 1 item","Result: SUCCESS","OK","PASS"

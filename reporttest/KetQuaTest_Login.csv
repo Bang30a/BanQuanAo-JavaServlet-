@@ -1,0 +1,12 @@
+﻿ID,Tên Kịch Bản,Dữ Liệu Mẫu,Các Bước,Kết Quả Mong Đợi,Kết Quả Thực Tế,Trạng Thái
+LOG_05,Đăng nhập User thường,"User: phantutruong
+Role: user",DAO return User -> switch case 'user',SUCCESS_USER,SUCCESS_USER,PASS
+LOG_03,Sai tên đăng nhập hoặc mật khẩu,"User: admin
+Pass: sai_pass",DAO return NULL -> return FAILED_CREDENTIALS,FAILED_CREDENTIALS,FAILED_CREDENTIALS,PASS
+LOG_02,Check Lỗi Hệ Thống (DB chết),User: admin,DAO throws Exception -> return FAILED_SYSTEM_ERROR,FAILED_SYSTEM_ERROR,FAILED_SYSTEM_ERROR,PASS
+LOG_06,Role không hợp lệ (Hacker/Guest),"User: hehe
+Role: He He he",Switch case default -> FAILED_INVALID_ROLE,FAILED_INVALID_ROLE,FAILED_INVALID_ROLE,PASS
+LOG_01,Check Input Rỗng/Null,"User: '' (rỗng)
+Pass: null",Validate isNullOrEmpty -> return FAILED_CREDENTIALS,FAILED_CREDENTIALS,FAILED_CREDENTIALS,PASS
+LOG_04,Đăng nhập Admin (Happy Path),"User: admin
+Role: admin",DAO return User Admin -> switch case 'admin',SUCCESS_ADMIN,SUCCESS_ADMIN,PASS

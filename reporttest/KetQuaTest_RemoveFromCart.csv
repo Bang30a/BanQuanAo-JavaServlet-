@@ -1,0 +1,9 @@
+﻿ID,Tên Test Case,Các bước thực hiện,Dữ liệu đầu vào,Kết quả mong đợi,Kết quả thực tế,Trạng thái
+"REMOVE_02","Xóa khi giỏ rỗng (Null)","1. Session cart = null
+2. Index=0","Cart=null","Redirect ngay, ko gọi Service","OK","PASS"
+"REMOVE_04","Index Null","1. Param index = null","Index=null","Ko gọi Service, Redirect","OK","PASS"
+"REMOVE_01","Xóa thành công","1. Session có Cart
+2. Index=0
+3. Call service remove","Index=0","Update Cart & Redirect","OK","PASS"
+"REMOVE_03","Index lỗi (Chuỗi)","1. Index='abc'
+2. Catch Exception","Index='abc'","Ko gọi Service, Redirect","OK","PASS"

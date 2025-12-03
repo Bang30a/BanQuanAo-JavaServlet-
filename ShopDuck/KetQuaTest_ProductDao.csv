@@ -1,0 +1,18 @@
+﻿ID,Tên Test Case,Các bước thực hiện,Dữ liệu đầu vào,Kết quả mong đợi,Kết quả thực tế,Trạng thái
+DAO_PROD_04,Xóa sản phẩm,"1. Insert SP
+2. Delete
+3. Check lại",SP ID vừa tạo,"Delete -> 1 dòng
+GetById -> Null","Delete -> 1 dòng
+GetById -> Null",PASS
+DAO_PROD_01,Thêm sản phẩm & Tìm theo ID,"1. Insert 'Áo Sơ Mi'
+2. GetById lấy lại","Name: Áo Sơ Mi
+Price: 50.0","Insert -> ID > 0
+GetById -> Đúng Name/Price","Insert -> ID > 0
+GetById -> Đúng Name/Price",PASS
+DAO_PROD_05,Lấy danh sách tất cả SP,"1. Insert 2 SP
+2. GetAllProducts","SP1, SP2",List size = 2,List size = 2,PASS
+DAO_PROD_02,Tìm sản phẩm không tồn tại,Gọi GetById với ID lạ (999),ID: 999,Trả về Null,Trả về Null,PASS
+DAO_PROD_03,Cập nhật thông tin sản phẩm,"1. Insert 'Áo Cũ'
+2. Update thành 'Áo Mới'
+3. Check lại","Old: Áo Cũ ($10)
+New: Áo Mới ($99)","GetById ra 'Áo Mới', $99","GetById ra 'Áo Mới', $99",PASS

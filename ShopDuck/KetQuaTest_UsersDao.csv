@@ -1,0 +1,18 @@
+﻿ID,Tên Test Case,Các bước thực hiện,Dữ liệu đầu vào,Kết quả mong đợi,Kết quả thực tế,Trạng thái
+DAO_USER_03,Kiểm tra tồn tại (CheckExists),"1. Tạo user 'existingUser'
+2. Check nó và check user lạ",User: existingUser,"Tồn tại -> True
+Không tồn tại -> False","Tồn tại -> True
+Không tồn tại -> False",PASS
+DAO_USER_04,Cập nhật thông tin User,"1. Tạo user
+2. Sửa fullname/email
+3. Lấy lại từ DB check",New Name: New Full Name,Dữ liệu trong DB thay đổi đúng,Dữ liệu trong DB thay đổi đúng,PASS
+DAO_USER_02,Đăng nhập thất bại (Sai info),"1. Login sai pass
+2. Login sai user",User: wrong / Pass: wrong,Cả 2 trường hợp trả về Null,Cả 2 trường hợp trả về Null,PASS
+DAO_USER_01,Đăng ký & Đăng nhập thành công,"1. Register User mới
+2. Login lại","User: user1
+Pass: pass123","Register -> True
+Login -> Object != null","Register -> True
+Login -> Object != null",PASS
+DAO_USER_05,Xóa User,"1. Tạo user
+2. Gọi delete
+3. GetById check lại",User ID cần xóa,GetById trả về Null,GetById trả về Null,PASS

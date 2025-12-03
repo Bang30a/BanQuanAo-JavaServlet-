@@ -1,0 +1,9 @@
+﻿ID,Tên Test Case,Các bước thực hiện,Dữ liệu đầu vào,Kết quả mong đợi,Kết quả thực tế,Trạng thái
+"PROD_SVC_04","Lấy biến thể (Size/Màu)","1. ID=1
+2. Call VariantDAO","ID=1","Trả về list variants","OK","PASS"
+"PROD_SVC_02","Tìm kiếm rỗng","1. Key='   '
+2. Call DAO getAllProducts","Key='   '","Trả về toàn bộ SP","OK","PASS"
+"PROD_SVC_01","Tìm kiếm có từ khóa","1. Key='ao'
+2. Call DAO searchByKeyword","Key='ao'","Trả về list kết quả","OK","PASS"
+"PROD_SVC_03","Lấy chi tiết SP (Có)","1. ID=1
+2. DAO trả về SP","ID=1","Trả về Object Products","OK","PASS"

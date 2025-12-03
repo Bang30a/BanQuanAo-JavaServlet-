@@ -1,191 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<web-app version="3.1" xmlns="http://xmlns.jcp.org/xml/ns/javaee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd">
-    <!-- SERVLETS -->
-    <servlet>
-        <servlet-name>UserProductServlet</servlet-name>
-        <servlet-class>control.UserProductServlet</servlet-class>
-    </servlet>
-    <servlet>
-        <servlet-name>AdminProductServlet</servlet-name>
-        <servlet-class>control.AdminProductServlet</servlet-class>
-    </servlet>
-    <servlet>
-        <servlet-name>LoginServlet</servlet-name>
-        <servlet-class>control.LoginServlet</servlet-class>
-    </servlet>
-    <servlet>
-        <servlet-name>RegisterServlet</servlet-name>
-        <servlet-class>control.RegisterServlet</servlet-class>
-    </servlet>
-    <!-- SERVLET MAPPINGS -->
-    <servlet>
-        <servlet-name>LogoutServlet</servlet-name>
-        <servlet-class>control.LogoutServlet</servlet-class>
-    </servlet>
-    <servlet>
-        <servlet-name>ViewProductsServlet</servlet-name>
-        <servlet-class>control.user.ViewProductsServlet</servlet-class>
-    </servlet>
-    <servlet>
-        <servlet-name>ViewProductServlet</servlet-name>
-        <servlet-class>control.user.ViewProductServlet</servlet-class>
-    </servlet>
-    <servlet>
-        <servlet-name>AddToCartServlet</servlet-name>
-        <servlet-class>control.user.AddToCartServlet</servlet-class>
-    </servlet>
-    <servlet>
-        <servlet-name>RemoveFromCartServlet</servlet-name>
-        <servlet-class>control.user.RemoveFromCartServlet</servlet-class>
-    </servlet>
-    <servlet>
-        <servlet-name>SearchProductServlet</servlet-name>
-        <servlet-class>control.user.SearchProductServlet</servlet-class>
-    </servlet>
-    <servlet>
-        <servlet-name>ProductDetailServlet</servlet-name>
-        <servlet-class>control.user.ProductDetailServlet</servlet-class>
-    </servlet>
-    <servlet>
-        <servlet-name>CheckoutServlet</servlet-name>
-        <servlet-class>control.user.CheckoutServlet</servlet-class>
-    </servlet>
-    <servlet>
-        <servlet-name>ConfirmCheckoutServlet</servlet-name>
-        <servlet-class>control.user.ConfirmCheckoutServlet</servlet-class>
-    </servlet>
-    <servlet>
-        <servlet-name>UserListServlet</servlet-name>
-        <servlet-class>control.admin.UserListServlet</servlet-class>
-    </servlet>
-    <servlet>
-        <servlet-name>UsersManagerServlet</servlet-name>
-        <servlet-class>control.admin.UsersManagerServlet</servlet-class>
-    </servlet>
-    <servlet>
-        <servlet-name>ProductsManagerServlet</servlet-name>
-        <servlet-class>control.admin.ProductsManagerServlet</servlet-class>
-    </servlet>
-    <servlet>
-        <servlet-name>ProductVariantsManagerServlet</servlet-name>
-        <servlet-class>control.admin.ProductVariantsManagerServlet</servlet-class>
-    </servlet>
-    <servlet>
-        <servlet-name>SizesManagerServlet</servlet-name>
-        <servlet-class>control.admin.SizesManagerServlet</servlet-class>
-    </servlet>
-    <servlet>
-        <servlet-name>OrdersManagerServlet</servlet-name>
-        <servlet-class>control.admin.OrdersManagerServlet</servlet-class>
-    </servlet>
-    <servlet>
-        <servlet-name>StatisticsManagerServlet</servlet-name>
-        <servlet-class>control.admin.StatisticsManagerServlet</servlet-class>
-    </servlet>
-    <servlet>
-        <servlet-name>OrderDetailServlet</servlet-name>
-        <servlet-class>control.admin.OrderDetailServlet</servlet-class>
-    </servlet>
-    <servlet>
-        <servlet-name>DashboardServlet</servlet-name>
-        <servlet-class>DashboardServlet</servlet-class>
-    </servlet>
-    <servlet>
-        <servlet-name>StatisticsServlet</servlet-name>
-        <servlet-class>control.admin.StatisticsServlet</servlet-class>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>UserProductServlet</servlet-name>
-        <url-pattern>/user/products</url-pattern>
-    </servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>AdminProductServlet</servlet-name>
-        <url-pattern>/admin/products</url-pattern>
-    </servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>LoginServlet</servlet-name>
-        <url-pattern>/auth/login</url-pattern>
-    </servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>RegisterServlet</servlet-name>
-        <url-pattern>/auth/register</url-pattern>
-    </servlet-mapping>
-    <!-- SESSION CONFIG -->
-    <servlet-mapping>
-        <servlet-name>LogoutServlet</servlet-name>
-        <url-pattern>/LogoutServlet</url-pattern>
-    </servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>ViewProductServlet</servlet-name>
-        <url-pattern>/ViewProductServlet</url-pattern>
-    </servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>AddToCartServlet</servlet-name>
-        <url-pattern>/AddToCartServlet</url-pattern>
-    </servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>RemoveFromCartServlet</servlet-name>
-        <url-pattern>/RemoveFromCartServlet</url-pattern>
-    </servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>SearchProductServlet</servlet-name>
-        <url-pattern>/SearchProductServlet</url-pattern>
-    </servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>ProductDetailServlet</servlet-name>
-        <url-pattern>/ProductDetailServlet</url-pattern>
-    </servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>CheckoutServlet</servlet-name>
-        <url-pattern>/CheckoutServlet</url-pattern>
-    </servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>ConfirmCheckoutServlet</servlet-name>
-        <url-pattern>/ConfirmCheckoutServlet</url-pattern>
-    </servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>UserListServlet</servlet-name>
-        <url-pattern>/UserListServlet</url-pattern>
-    </servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>UsersManagerServlet</servlet-name>
-        <url-pattern>/UsersManagerServlet</url-pattern>
-    </servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>ProductsManagerServlet</servlet-name>
-        <url-pattern>/ProductsManagerServlet</url-pattern>
-    </servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>ProductVariantsManagerServlet</servlet-name>
-        <url-pattern>/ProductVariantsManagerServlet</url-pattern>
-    </servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>SizesManagerServlet</servlet-name>
-        <url-pattern>/SizesManagerServlet</url-pattern>
-    </servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>OrdersManagerServlet</servlet-name>
-        <url-pattern>/OrdersManagerServlet</url-pattern>
-    </servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>StatisticsManagerServlet</servlet-name>
-        <url-pattern>/StatisticsManagerServlet</url-pattern>
-    </servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>OrderDetailServlet</servlet-name>
-        <url-pattern>/OrderDetailServlet</url-pattern>
-    </servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>DashboardServlet</servlet-name>
-        <url-pattern>/DashboardServlet</url-pattern>
-    </servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>StatisticsServlet</servlet-name>
-        <url-pattern>/StatisticsServlet</url-pattern>
-    </servlet-mapping>
+<web-app version="3.1" xmlns="http://xmlns.jcp.org/xml/ns/javaee" 
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+         xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd">
+
+    <!-- 
+        LƯU Ý QUAN TRỌNG:
+        Tất cả các Servlet (Login, Register, Product...) đã được cấu hình bằng @WebServlet trong code Java.
+        KHÔNG khai báo lại ở đây để tránh xung đột (Duplicate Mapping Error).
+    -->
+
+    <!-- Cấu hình Session: Hết hạn sau 30 phút -->
     <session-config>
-        <session-timeout>
-            30
-        </session-timeout>
+        <session-timeout>30</session-timeout>
     </session-config>
+
+    <!-- Cấu hình Trang chủ mặc định -->
+    <!-- Khi chạy http://localhost:8080/ShopDuck/ sẽ tự động vào /home -->
+    <welcome-file-list>
+        <welcome-file>home</welcome-file>
+    </welcome-file-list>
+
 </web-app>

@@ -1,0 +1,7 @@
+﻿ID,Tên Test Case,Các bước thực hiện,Dữ liệu đầu vào,Kết quả mong đợi,Kết quả thực tế,Trạng thái
+CHECKOUT_01,Đặt hàng thành công,"1. User, Cart OK
+2. Service return SUCCESS","Addr: Hanoi, Phone: 0909",Xóa Cart & Redirect Home,OK,PASS
+CHECKOUT_03,Thiếu thông tin,"1. Address/Phone null
+2. Service return MISSING_INFO",Addr=null,Forward lại Checkout.jsp + Error,OK,PASS
+CHECKOUT_02,Chưa đăng nhập,"1. User session = null
+2. Service return NOT_LOGGED_IN",User=null,Redirect Login,OK,PASS

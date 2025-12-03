@@ -1,0 +1,11 @@
+﻿ID,Tên Test Case,Các bước thực hiện,Dữ liệu đầu vào,Kết quả mong đợi,Kết quả thực tế,Trạng thái
+"CART_SERV_02","Servlet: Thêm thành công","1. User Logged In
+2. Mock DAO tìm thấy SP
+3. Service add OK","User: OK, PID: 1","Redirect: Referer","OK","PASS"
+"CART_SERV_05","Servlet: Số lượng âm","Input quantity='-5'","Qty='-5'","Vẫn gọi service (Service sẽ xử lý)","OK","PASS"
+"CART_SERV_04","Servlet: Số lượng là chữ (Rác)","Input quantity='abc'","Qty='abc'","Mặc định thêm 1","OK","PASS"
+"CART_SERV_01","Servlet: Chưa đăng nhập","1. User session = null
+2. Call doPost","User: null","Redirect: Login.jsp","OK","PASS"
+"CART_SERV_03","Servlet: SP không tồn tại","1. User Logged In
+2. Mock DAO trả về null","PID: 999","Báo lỗi addCartError","OK","PASS"
+"CART_SERV_06","Servlet: Lỗi Database (Crash)","DAO ném Exception","DB Error","Redirect & Báo lỗi","OK","PASS"

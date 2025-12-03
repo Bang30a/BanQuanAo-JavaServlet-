@@ -1,0 +1,12 @@
+﻿ID,Tên Test Case,Các bước thực hiện,Dữ liệu đầu vào,Kết quả mong đợi,Kết quả thực tế,Trạng thái
+DAO_03,Kiểm tra user tồn tại,Insert 'userA' -> Check 'userA',username: userA,Result: true,OK,PASS
+DAO_REG_01,Integration: Đăng ký User mới (DB thật),"1. Gọi hàm register
+2. Gọi checkUserExists để verify",User: regUser,Insert thành công (True),OK,PASS
+DAO_01,Integration: Login thành công (DB thật),"1. Insert User vào DB Test
+2. Gọi hàm login","User: testuser, Pass: pass123",Trả về Object User đầy đủ,OK,PASS
+DAO_REG_02,Integration: Chặn đăng ký trùng (DB Constraints),"1. Insert user A
+2. Insert tiếp user A",User: duplicateUser,Lần 2 có thể lỗi hoặc false tùy DB,OK,PASS
+DAO_04,Cập nhật thông tin User,Insert -> Update Pass -> Login lại,"Old: 123, New: 456",Login được bằng 456,OK,PASS
+DAO_02,Integration: Login sai pass (DB thật),"1. Insert User
+2. Login sai pass","User: testuser, Pass: WRONG_PASS",Trả về null,OK,PASS
+DAO_05,Xóa User,Insert -> Delete -> Login lại,User: deleteMe,Login trả về null,OK,PASS

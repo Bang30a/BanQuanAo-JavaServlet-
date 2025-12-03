@@ -1,0 +1,12 @@
+﻿ID,Tên Test Case,Các bước thực hiện,Dữ liệu đầu vào,Kết quả mong đợi,Kết quả thực tế,Trạng thái
+"DETAIL_02","SP không tồn tại","1. Action='detail', ID=999
+2. Service return null","ID=999","Redirect searchResult.jsp","OK","PASS"
+"DETAIL_03","ID lỗi (chữ)","1. Action='detail', ID='abc'","ID='abc'","Bắt lỗi -> Redirect","OK","PASS"
+"SEARCH_EX_01","Lỗi hệ thống bất ngờ","1. Service ném RuntimeException","Crash","Redirect view-products","OK","PASS"
+"SEARCH_01","Tìm kiếm thông thường","1. Action=null (mặc định search)
+2. Key='ao'
+3. Service trả list","Key='ao'","Forward searchResult.jsp","OK","PASS"
+"SEARCH_02","Tìm kiếm rỗng","1. Key='   '
+2. Service trả all","Key='   '","Forward searchResult.jsp","OK","PASS"
+"DETAIL_01","Xem chi tiết thành công","1. Action='detail', ID=1
+2. Service tìm thấy SP","ID=1","Forward info-products.jsp","OK","PASS"

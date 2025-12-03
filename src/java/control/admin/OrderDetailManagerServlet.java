@@ -43,8 +43,7 @@ public class OrderDetailManagerServlet extends HttpServlet {
 
             request.setAttribute("ORDER_ID", orderId);
             request.setAttribute("DETAILS", details);
-            request.getRequestDispatcher("/admin/View-order-detail.jsp").forward(request, response);
-            
+            request.getRequestDispatcher("/admin/order/View-order-detail.jsp").forward(request, response);            
         } catch (Exception e) { // Bắt các lỗi khác, ví dụ: NumberFormatException
             e.printStackTrace();
             request.setAttribute("error", "Có lỗi xảy ra: " + e.getMessage());

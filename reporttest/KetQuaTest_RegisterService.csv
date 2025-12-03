@@ -1,0 +1,10 @@
+﻿ID,Tên Test Case,Các bước thực hiện,Dữ liệu đầu vào,Kết quả mong đợi,Kết quả thực tế,Trạng thái
+REG_SVC_04,Email sai định dạng,Nhập email không có @,Email: invalid-email,Result: INVALID_INPUT,OK,PASS
+REG_SVC_05,Lỗi DB khi Insert,Mock DAO register trả về false,Data hợp lệ,Result: REGISTRATION_FAILED,OK,PASS
+REG_SVC_06,Đăng ký với Input Null,Truyền username = null,User: null,Result: INVALID_INPUT,OK,PASS
+REG_SVC_08,Mật khẩu đúng 6 ký tự (Biên),Pass dài 6 ký tự (hợp lệ),Pass: 123456,Result: SUCCESS,OK,PASS
+REG_SVC_01,Đăng ký thành công,"1. Input hợp lệ
+2. Mock DAO trả về true","User: newuser, Email: new@mail.com",Result: SUCCESS,OK,PASS
+REG_SVC_03,Mật khẩu quá ngắn (<6),Nhập pass 3 ký tự,Pass: 123,Result: INVALID_INPUT,OK,PASS
+REG_SVC_07,Đăng ký với Input Rỗng,"Truyền username = """" (chuỗi rỗng)","User: """"",Result: INVALID_INPUT,OK,PASS
+REG_SVC_02,Đăng ký trùng Username,1. Mock DAO checkUserExists = true,User: existingUser,Result: USERNAME_EXISTS,OK,PASS

@@ -1,0 +1,16 @@
+﻿ID,Tên Test Case,Các bước thực hiện,Dữ liệu đầu vào,Kết quả mong đợi,Kết quả thực tế,Trạng thái
+DAO_SIZE_02,Lấy danh sách tất cả Size,"1. Insert S, M, L
+2. GetAllSizes","S, M, L","List size = 3
+Element[1] = M","List size = 3
+Element[1] = M",PASS
+DAO_SIZE_03,Cập nhật thông tin Size,"1. Insert 'XL'
+2. Update thành 'XXL'",Old: XL -> New: XXL,GetById ra 'XXL',GetById ra 'XXL',PASS
+DAO_SIZE_04,Xóa Size,"1. Insert Size
+2. Delete
+3. Check lại",Size ID 1,"Delete -> True
+GetById -> Null","Delete -> True
+GetById -> Null",PASS
+DAO_SIZE_01,Thêm mới & Lấy theo ID,"1. Insert size 'M'
+2. GetById(1)",Size: M,"Insert -> True
+GetById -> Not Null, Label='M'","Insert -> True
+GetById -> Not Null, Label='M'",PASS

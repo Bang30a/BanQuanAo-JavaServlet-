@@ -8,13 +8,31 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.*;
 import java.io.IOException;
 
-@WebServlet("/register")
+@WebServlet(name = "RegisterServlet", urlPatterns = {"/RegisterServlet"})
 public class RegisterServlet extends HttpServlet {
+
+    // --- PHẦN THÊM MỚI ĐỂ HỖ TRỢ TEST ---
+    private UsersDao usersDao;
+
+    // 1. Hàm Setter: Dùng để Unit Test chèn Mock DAO vào
+    public void setUsersDao(UsersDao usersDao) {
+        this.usersDao = usersDao;
+    }
+
+    // 2. Hàm Getter: Dùng để lấy DAO. Nếu chưa có (chạy thật) thì tự new mới.
+    private UsersDao getUsersDao() {
+        if (usersDao == null) {
+            usersDao = new UsersDao();
+        }
+        return usersDao;
+    }
+    // ------------------------------------
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        response.sendRedirect(request.getContextPath() + "/user/Register.jsp");
+        // [SỬA PATH] Trỏ vào thư mục user/auth/
+        response.sendRedirect(request.getContextPath() + "/user/auth/Register.jsp");
     }
 
     @Override
@@ -30,35 +48,33 @@ public class RegisterServlet extends HttpServlet {
         String email = request.getParameter("email");
 
         HttpSession session = request.getSession();
-        UsersDao dao = createDao();
+        
+        // [QUAN TRỌNG] Thay đổi cách gọi DAO tại đây
+        // Thay vì: UsersDao dao = new UsersDao();
+        // Ta dùng:
+        UsersDao dao = getUsersDao(); 
 
+        // 1. Kiểm tra trùng tên đăng nhập
         if (dao.checkUserExists(username)) {
-            // ❌ Tên đăng nhập trùng
             session.setAttribute("registerError", "⚠️ Tên đăng nhập đã tồn tại!");
-            response.sendRedirect(request.getContextPath() + "/user/Register.jsp");
+            // [SỬA PATH] Quay lại trang đăng ký
+            response.sendRedirect(request.getContextPath() + "/user/auth/Register.jsp");
             return;
         }
 
+        // 2. Tạo user mới (Mặc định role là 'user')
         Users newUser = new Users(username, password, fullname, email, "user");
         boolean success = dao.register(newUser);
 
         if (success) {
             // ✅ Đăng ký thành công
             session.setAttribute("registerSuccess", "🎉 Đăng ký thành công! Vui lòng đăng nhập.");
-            response.sendRedirect(request.getContextPath() + "/user/Login.jsp");
+            // [SỬA PATH] Chuyển sang trang Login
+            response.sendRedirect(request.getContextPath() + "/user/auth/Login.jsp");
         } else {
-            // ❌ Lỗi không xác định
+            // ❌ Lỗi database
             session.setAttribute("registerError", "❌ Đăng ký thất bại. Vui lòng thử lại!");
-            response.sendRedirect(request.getContextPath() + "/user/Register.jsp");
+            response.sendRedirect(request.getContextPath() + "/user/auth/Register.jsp");
         }
-    }
-
-    protected UsersDao createDao() {
-        return new UsersDao();
-    }
-
-    @Override
-    public String getServletInfo() {
-        return "Xử lý đăng ký người dùng mới.";
     }
 }

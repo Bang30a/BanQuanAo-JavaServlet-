@@ -1,0 +1,2 @@
+﻿ID,Tên Test Case,Các bước thực hiện,Dữ liệu đầu vào,Kết quả mong đợi,Kết quả thực tế,Trạng thái
+"SYS_CART_01","System Test: Thêm vào giỏ hàng","1. Login | 2. Chọn SP đầu tiên | 3. Bấm Add to Cart | 4. Check Alert","User: user / Pass: user123","Hiện thông báo: 'Đã thêm sản phẩm vào giỏ hàng'","Hiện thông báo: 'Đã thêm sản phẩm vào giỏ hàng'","PASS"

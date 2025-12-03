@@ -1,0 +1,12 @@
+﻿ID,Tên Test Case,Các bước thực hiện,Dữ liệu đầu vào,Kết quả mong đợi,Kết quả thực tế,Trạng thái
+"PROD_DAO_02","Tìm kiếm sản phẩm (Tên & Mô tả)","1. Insert 3 SP
+2. Tìm 'jean' (có trong tên)
+3. Tìm 'cotton' (có trong mô tả)","Data: Quan Jean, Ao Thun...","Kết quả list trả về đúng số lượng","OK","PASS"
+"PROD_DAO_03","Cập nhật sản phẩm","1. Insert
+2. Update giá & tên
+3. Find lại","Old: 100k, New: 150k","Dữ liệu mới được lưu","OK","PASS"
+"PROD_DAO_01","Thêm và Tìm kiếm theo ID","1. Insert Product
+2. Find by generated ID","Name: Ao Thun","Trả về object Product đúng tên","OK","PASS"
+"PROD_DAO_04","Xóa sản phẩm","1. Insert
+2. Delete
+3. Find lại","ID vừa tạo","Find trả về null","OK","PASS"

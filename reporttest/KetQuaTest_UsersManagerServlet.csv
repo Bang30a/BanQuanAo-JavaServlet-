@@ -1,0 +1,9 @@
+﻿ID,Tên Test Case,Các bước thực hiện,Dữ liệu đầu vào,Kết quả mong đợi,Kết quả thực tế,Trạng thái
+"USER_MGR_03","Lưu User mới","1. Action='SaveOrUpdate'
+2. Params đầy đủ","User: test, Pass: 123","Call Service Save -> Redirect List","OK","PASS"
+"USER_MGR_02","Hiện form sửa User","1. Action='AddOrEdit', ID=5
+2. Service trả User","ID=5","Forward UsersManager.jsp","OK","PASS"
+"USER_MGR_04","Xóa User","1. Action='Delete'
+2. ID=10","ID=10","Call Service Delete -> Redirect List","OK","PASS"
+"USER_MGR_01","Xem danh sách User","1. Action='List'
+2. Service trả list","List size=1","Forward View-users.jsp","OK","PASS"

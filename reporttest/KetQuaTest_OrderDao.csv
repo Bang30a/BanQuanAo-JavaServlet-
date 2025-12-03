@@ -1,0 +1,6 @@
+﻿ID,Tên Test Case,Các bước thực hiện,Dữ liệu đầu vào,Kết quả mong đợi,Kết quả thực tế,Trạng thái
+"ORD_DAO_01","Thêm đơn hàng (DB thật)","1. Tạo Order Object
+2. Call addOrder
+3. Check ID trả về","User: 1, Total: 500k","Insert thành công, ID > 0","OK","PASS"
+"ORD_DAO_02","Lấy danh sách đơn hàng","1. Insert 2 đơn
+2. Call getAllOrders","2 Orders","Size = 2","OK","PASS"

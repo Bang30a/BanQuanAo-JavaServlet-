@@ -1,50 +1,49 @@
 package control.admin;
 
 import dao.DashboardDao;
-import service.DashboardService; // <-- Import service
-
+import java.io.IOException;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Map;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.*;
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
 
-@WebServlet("/admin/StatisticsServlet")
+@WebServlet("/admin/statistics")
 public class StatisticsServlet extends HttpServlet {
 
-    private DashboardService dashboardService; // <-- Tham chiếu đến service
-
-    @Override
-    public void init() throws ServletException {
-        // Khởi tạo DAO và "tiêm" nó vào Service
-        DashboardDao dao = new DashboardDao();
-        this.dashboardService = new DashboardService(dao);
-    }
-
-    @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+        
+        request.setCharacterEncoding("UTF-8");
+        
+        String startDate = request.getParameter("startDate");
+        String endDate = request.getParameter("endDate");
 
-        // --- Gọi Service thay vì DAO ---
-        // Các hàm này giờ đã an toàn, không ném Exception
-        double totalRevenue = dashboardService.getTotalRevenue();
-        int totalOrders = dashboardService.getTotalOrders();
-        int totalUsers = dashboardService.getTotalUsers();
-        List<Map<String, Object>> topSellingProducts = dashboardService.getTopSellingProducts(5);
-        // --- Hết phần gọi Service ---
+        // Mặc định lấy tháng hiện tại nếu chưa chọn
+        if (startDate == null) {
+            LocalDate today = LocalDate.now();
+            startDate = today.withDayOfMonth(1).toString();
+            endDate = today.toString();
+        }
 
-        request.setAttribute("totalRevenue", totalRevenue);
-        request.setAttribute("totalOrders", totalOrders);
-        request.setAttribute("totalUsers", totalUsers);
-        request.setAttribute("topSellingProducts", topSellingProducts);
+        DashboardDao dao = new DashboardDao();
+        
+        // 1. Số liệu tổng quan trong khoảng thời gian
+        double revenue = dao.getRevenueByDate(startDate, endDate);
+        int orders = dao.getOrderCountByDate(startDate, endDate);
+        
+        // 2. BẢNG DỮ LIỆU chi tiết (Top sản phẩm bán trong khoảng thời gian này)
+        List<Map<String, Object>> reportData = dao.getTopSellingProductsByDate(startDate, endDate);
 
-        request.getRequestDispatcher("/admin/Statistics.jsp").forward(request, response);
-    }
+        // 3. Đẩy ra JSP
+        request.setAttribute("revenue", revenue);
+        request.setAttribute("orders", orders);
+        request.setAttribute("reportData", reportData); // Dữ liệu cho bảng
+        
+        request.setAttribute("start", startDate);
+        request.setAttribute("end", endDate);
 
-    @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        doGet(request, response);
+        request.getRequestDispatcher("/admin/dashboard/Statistics.jsp").forward(request, response);
     }
 }

@@ -1,0 +1,6 @@
+﻿ID,Tên Test Case,Các bước thực hiện,Dữ liệu đầu vào,Kết quả mong đợi,Kết quả thực tế,Trạng thái
+"UPDATE_03","Input lỗi (Chữ)","1. Qty = 'abc'","Qty='abc'","Bắt lỗi, không gọi Service","OK","PASS"
+"UPDATE_04","Cập nhật về 0","1. Input Qty = 0","Qty=0","Service được gọi với 0","OK","PASS"
+"UPDATE_01","Cập nhật thành công","1. Session có Cart
+2. Input ID=1, Qty=5","ID=1, Qty=5","Call Service update -> Redirect","OK","PASS"
+"UPDATE_02","Cập nhật khi giỏ Null","1. Cart = null","Cart=null","Redirect ngay, Service không chạy","OK","PASS"

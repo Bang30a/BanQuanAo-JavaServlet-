@@ -1,0 +1,15 @@
+﻿ID,Tên Test Case,Các bước thực hiện,Dữ liệu đầu vào,Kết quả mong đợi,Kết quả thực tế,Trạng thái
+INT_ORD_03,Đặt hàng thất bại (Giỏ rỗng),"1. Cart rỗng
+2. PlaceOrder",Cart: Empty,"Result: EMPTY_CART
+DB: Không đổi","Result: EMPTY_CART
+DB: Không đổi",PASS
+INT_ORD_01,Đặt hàng thành công & Commit DB,"1. User mua 2 áo (ID=1)
+2. PlaceOrder
+3. Check DB",Cart: 2 x Variant(1),"Result: SUCCESS
+DB: Có Order & Detail","Result: SUCCESS
+DB: Có Order & Detail",PASS
+INT_ORD_02,Rollback khi lỗi thêm chi tiết (Detail),"1. Cart chứa SP ma (ID=999)
+2. PlaceOrder
+3. Check DB (phải rỗng)",Cart: Variant(999),"Result: EXCEPTION
+DB: Không có Order (Rollback)","Result: EXCEPTION
+DB: Không có Order (Rollback)",PASS

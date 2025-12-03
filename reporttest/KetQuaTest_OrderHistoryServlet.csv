@@ -1,0 +1,6 @@
+﻿ID,Tên Test Case,Các bước thực hiện,Dữ liệu đầu vào,Kết quả mong đợi,Kết quả thực tế,Trạng thái
+"HIST_01","Xem danh sách đơn hàng","1. Action=null
+2. Service getOrdersForUser","User ID=1","Forward history.jsp","OK","PASS"
+"HIST_02","Xem chi tiết đơn hàng","1. Action=detail
+2. ID=10
+3. Service getSecuredOrder","Order ID=10","Forward order-detail.jsp","OK","PASS"

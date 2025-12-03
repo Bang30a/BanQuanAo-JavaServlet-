@@ -1,0 +1,26 @@
+﻿ID,Tên Test Case,Các bước thực hiện,Dữ liệu đầu vào,Kết quả mong đợi,Kết quả thực tế,Trạng thái
+ORDER_04,Lỗi Database khi Insert Order,DAO addOrder ném ra SQLException,Simulate SQL Exception,"Trả về EXCEPTION
+Rollback Transaction","Trả về EXCEPTION
+Rollback Transaction",PASS
+ORDER_06,Lỗi Runtime không mong muốn,"Hệ thống gặp lỗi lạ (Deadlock, NullPointer...)",RuntimeException,"Trả về EXCEPTION
+Rollback Transaction","Trả về EXCEPTION
+Rollback Transaction",PASS
+ORDER_02,Đặt hàng thất bại (Giỏ rỗng),Giỏ hàng không có sản phẩm nào,Cart: [] (Empty),"Trả về EMPTY_CART
+Không mở Connection","Trả về EMPTY_CART
+Không mở Connection",PASS
+ORDER_01,Đặt hàng thành công (Happy Path),"1. Có giỏ hàng
+2. Đủ thông tin Address/Phone","User: 1
+Cart: 1 item (Price: 100)","Trả về SUCCESS
+Commit Transaction","Trả về SUCCESS
+Commit Transaction",PASS
+ORDER_05,Lỗi Database khi Insert Detail,"1. Insert Order OK
+2. Insert Detail ném lỗi",Simulate Detail SQL Error,"Trả về EXCEPTION
+Rollback Transaction","Trả về EXCEPTION
+Rollback Transaction",PASS
+ORDER_03,Đặt hàng thất bại (Thiếu địa chỉ),Truyền Address là chuỗi rỗng/space,Address: '   ',Trả về MISSING_INFO,Trả về MISSING_INFO,PASS
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,s,,

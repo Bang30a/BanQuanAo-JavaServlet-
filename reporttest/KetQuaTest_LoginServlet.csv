@@ -1,0 +1,9 @@
+﻿ID,Tên Test Case,Các bước thực hiện,Dữ liệu đầu vào,Kết quả mong đợi,Kết quả thực tế,Trạng thái
+SERV_01,Servlet: Đăng nhập Admin thành công,"1. Mock Req/Service trả về Admin
+2. Reflection gọi doPost","User: admin, Pass: 123",Redirect đến Dashboard.jsp,OK,PASS
+SERV_02,Servlet: Đăng nhập thất bại,"1. Mock Service trả về FAILED
+2. Reflection gọi doPost","User: wrong, Pass: wrong",Redirect về Login.jsp + Báo lỗi,OK,PASS
+SERV_04,Servlet: User Login -> Quay lại trang cũ,"1. Mock User
+2. Session CÓ redirectUrl",Url cũ: /cart.jsp,Redirect: /cart.jsp,OK,PASS
+SERV_03,Servlet: User Login -> Về trang chủ,"1. Mock User
+2. Session ko có redirectUrl",User: normal,Redirect: /user/view-products,OK,PASS

@@ -187,4 +187,5 @@ public class UsersDao {
                 rs.getString("role")
         );
     }
+    
 }

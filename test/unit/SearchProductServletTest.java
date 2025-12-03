@@ -112,6 +112,46 @@ public class SearchProductServletTest {
         verify(dispatcher).forward(request, response);
     }
 
+    // --- BỔ SUNG 1: TÌM KIẾM KHÔNG CÓ KẾT QUẢ ---
+    @Test
+    public void testDoGet_Search_NoResult() throws Exception {
+        setTestCaseInfo("SEARCH_03", "Tìm kiếm không thấy", 
+                "Key='xyz' -> Service trả list rỗng", 
+                "List size=0", "Forward searchResult.jsp");
+
+        when(request.getParameter("action")).thenReturn(null);
+        when(request.getParameter("keyword")).thenReturn("xyz");
+        when(request.getRequestDispatcher(contains("searchResult.jsp"))).thenReturn(dispatcher);
+
+        // Mock trả về list rỗng (nhưng không null)
+        when(productService.searchProducts("xyz")).thenReturn(Collections.emptyList());
+
+        servlet.doGet(request, response);
+
+        verify(request).setAttribute(eq("productList"), eq(Collections.emptyList()));
+        verify(dispatcher).forward(request, response);
+    }
+
+    // --- BỔ SUNG 2: KEYWORD BỊ NULL ---
+    @Test
+    public void testDoGet_Search_NullKey() throws Exception {
+        setTestCaseInfo("SEARCH_04", "Keyword bị Null", 
+                "Param keyword=null", 
+                "Xử lý như rỗng", "Không crash");
+
+        when(request.getParameter("action")).thenReturn("search");
+        when(request.getParameter("keyword")).thenReturn(null); // Trường hợp null
+        when(request.getRequestDispatcher(contains("searchResult.jsp"))).thenReturn(dispatcher);
+        
+        // Giả sử logic của bạn là null thì tìm tất cả hoặc tìm rỗng ("")
+        when(productService.searchProducts("")).thenReturn(new ArrayList<>()); 
+
+        servlet.doGet(request, response);
+
+        // Verify: Không được lỗi NullPointerException
+        verify(dispatcher).forward(request, response);
+    }
+
     // ==========================================
     // 2. TEST CHỨC NĂNG CHI TIẾT (Detail Action)
     // ==========================================
@@ -178,6 +218,23 @@ public class SearchProductServletTest {
         servlet.doGet(request, response);
 
         // Verify: Catch block trong handleDetailAction sẽ redirect
+        verify(response).sendRedirect(contains("searchResult.jsp"));
+    }
+
+    // --- BỔ SUNG 3: XEM CHI TIẾT THIẾU ID ---
+    @Test
+    public void testDoGet_Detail_MissingID() throws Exception {
+        setTestCaseInfo("DETAIL_04", "Thiếu tham số ID", 
+                "Action='detail', ID=null", 
+                "Báo lỗi/Redirect", "Redirect searchResult");
+
+        when(request.getParameter("action")).thenReturn("detail");
+        when(request.getParameter("id")).thenReturn(null); // Không truyền ID
+        when(request.getContextPath()).thenReturn("/ShopDuck");
+
+        servlet.doGet(request, response);
+
+        // Verify: Phải redirect về trang danh sách (hoặc trang lỗi tùy code bạn)
         verify(response).sendRedirect(contains("searchResult.jsp"));
     }
 

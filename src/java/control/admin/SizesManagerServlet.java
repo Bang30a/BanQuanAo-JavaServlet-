@@ -55,37 +55,68 @@ public class SizesManagerServlet extends HttpServlet {
     }
 
     private void handleSaveOrUpdate(HttpServletRequest request, HttpServletResponse response)
-            throws IOException {
+            throws ServletException, IOException {
         String idStr = request.getParameter("id");
         String label = request.getParameter("sizeLabel");
-        int id = (idStr != null && !idStr.isEmpty()) ? Integer.parseInt(idStr) : 0;
+        int id = 0;
+        try {
+            if (idStr != null && !idStr.isEmpty()) {
+                id = Integer.parseInt(idStr);
+            }
+        } catch (NumberFormatException e) {
+            e.printStackTrace();
+        }
         
         Size size = new Size(id, label);
-        sizeService.saveOrUpdateSize(size);
-        response.sendRedirect("SizesManagerServlet?action=List");
+        
+        // --- SỬA LOGIC Ở ĐÂY ĐỂ PASS UNIT TEST ---
+        // Gọi Service và hứng kết quả (String) thay vì void
+        String result = sizeService.saveOrUpdateSize(size);
+
+        if ("SUCCESS".equals(result)) {
+            // Thành công -> Redirect về danh sách
+            response.sendRedirect(request.getContextPath() + "/admin/SizesManagerServlet?action=List");
+        } else {
+            // Thất bại -> Forward lại form để báo lỗi
+            request.setAttribute("ERROR", result); // Đây là cái Test Case đang tìm kiếm
+            request.setAttribute("SIZE", size);    // Giữ lại dữ liệu cũ
+            request.setAttribute("ACTION", "SaveOrUpdate");
+            
+            // Forward về đường dẫn /admin/products/ như bạn yêu cầu
+            request.getRequestDispatcher("/admin/products/SizesManager.jsp").forward(request, response);
+        }
     }
 
     private void handleAddOrEdit(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         String idParam = request.getParameter("id");
-        int sizeId = (idParam != null && !idParam.isEmpty()) ? Integer.parseInt(idParam) : 0;
+        int sizeId = 0;
+        try {
+            if (idParam != null && !idParam.isEmpty()) {
+                sizeId = Integer.parseInt(idParam);
+            }
+        } catch (NumberFormatException e) {}
 
         Size size = sizeService.getSizeForEdit(sizeId); 
 
         request.setAttribute("SIZE", size);
         request.setAttribute("ACTION", "SaveOrUpdate");
         
-        // [SỬA ĐƯỜNG DẪN] Thêm /products/ vào đường dẫn
+        // Giữ nguyên đường dẫn của bạn
         request.getRequestDispatcher("/admin/products/SizesManager.jsp").forward(request, response);
     }
 
     private void handleDelete(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
         String idParam = request.getParameter("id");
-        if (idParam != null && !idParam.isEmpty()) {
-            sizeService.deleteSize(Integer.parseInt(idParam));
+        try {
+            if (idParam != null && !idParam.isEmpty()) {
+                sizeService.deleteSize(Integer.parseInt(idParam));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-        response.sendRedirect("SizesManagerServlet?action=List");
+        response.sendRedirect(request.getContextPath() + "/admin/SizesManagerServlet?action=List");
     }
 
     private void handleList(HttpServletRequest request, HttpServletResponse response)
@@ -94,7 +125,7 @@ public class SizesManagerServlet extends HttpServlet {
         List<Size> sizeList = sizeService.getAllSizes(); 
         request.setAttribute("list", sizeList);
         
-        // [SỬA ĐƯỜNG DẪN] Thêm /products/ vào đường dẫn cho khớp với ảnh của bạn
+        // Giữ nguyên đường dẫn của bạn
         request.getRequestDispatcher("/admin/products/View-sizes.jsp").forward(request, response);
     }
 

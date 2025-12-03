@@ -3,7 +3,8 @@ package service;
 import dao.SizeDao;
 import entity.Size;
 import java.util.List;
-import java.util.Collections; // Dùng để trả về danh sách rỗng
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -25,7 +26,7 @@ public class SizeService {
      */
     public List<Size> getAllSizes() {
         try {
-            return sizeDao.getAllSizes();
+            return sizeDao.getAllSizes(); // Giữ nguyên hàm của bạn
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Lỗi khi lấy tất cả kích thước", e);
             return Collections.emptyList(); // Trả về danh sách rỗng
@@ -41,7 +42,7 @@ public class SizeService {
             if (sizeId == 0) {
                 return new Size(); // Cho trường hợp "Thêm mới"
             }
-            Size size = sizeDao.getSizeById(sizeId);
+            Size size = sizeDao.getSizeById(sizeId); // Giữ nguyên hàm của bạn
             return (size != null) ? size : new Size();
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Lỗi khi lấy size theo ID: " + sizeId, e);
@@ -50,32 +51,57 @@ public class SizeService {
     }
 
     /**
-     * Lưu (Thêm mới) hoặc Cập nhật một kích thước.
-     * Trả về true nếu thành công.
+     * CẬP NHẬT LOGIC: Trả về String để báo lỗi cụ thể (Thay vì boolean)
+     * Đã tích hợp logic kiểm tra Rỗng và Trùng lặp.
+     * SỬA QUAN TRỌNG: Dùng getSizeLabel() thay vì name/sizeLabel() sai cú pháp
      */
-    public boolean saveOrUpdateSize(Size size) {
+    public String saveOrUpdateSize(Size size) {
         try {
-            // Logic "upsert" (update/insert)
-            if (size.getId() == 0 || sizeDao.getSizeById(size.getId()) == null) {
-                sizeDao.insertSize(size);
-            } else {
-                sizeDao.updateSize(size);
+            // 1. VALIDATION: Kiểm tra rỗng (Sửa thành getSizeLabel)
+            if (size.getSizeLabel() == null || size.getSizeLabel().trim().isEmpty()) {
+                return "Tên Size không được để trống!";
             }
-            return true;
+
+            // 2. VALIDATION: Kiểm tra trùng lặp (Logic thủ công)
+            // Lấy tất cả size lên để so sánh
+            List<Size> allSizes = getAllSizes();
+            for (Size existing : allSizes) {
+                // Sửa thành getSizeLabel()
+                if (existing.getSizeLabel().equalsIgnoreCase(size.getSizeLabel())) {
+                    
+                    // Nếu là thêm mới (id=0) -> Lỗi
+                    if (size.getId() == 0) {
+                        return "Size '" + size.getSizeLabel() + "' đã tồn tại!";
+                    }
+                    
+                    // Nếu là update (id!=0) mà id khác nhau -> Lỗi trùng tên người khác
+                    if (existing.getId() != size.getId()) {
+                        return "Size '" + size.getSizeLabel() + "' đã được sử dụng!";
+                    }
+                }
+            }
+
+            // 3. Logic lưu xuống DB (Sử dụng đúng tên hàm insertSize/updateSize của bạn)
+            boolean success;
+            if (size.getId() == 0) {
+                success = sizeDao.insertSize(size);
+            } else {
+                success = sizeDao.updateSize(size);
+            }
+            return success ? "SUCCESS" : "Lỗi hệ thống (DB)";
+
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Lỗi khi lưu/cập nhật size", e);
-            return false;
+            return "Exception: " + e.getMessage();
         }
     }
 
     /**
      * Xóa một kích thước theo ID.
-     * Trả về true nếu thành công.
      */
     public boolean deleteSize(int sizeId) {
         try {
-            sizeDao.deleteSize(sizeId);
-            return true;
+            return sizeDao.deleteSize(sizeId); // Giữ nguyên hàm của bạn
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Lỗi khi xóa size: " + sizeId, e);
             return false;

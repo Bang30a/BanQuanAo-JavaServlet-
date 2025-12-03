@@ -26,8 +26,11 @@
             <file>file:/D:/Study/java/javahehe/ShopDuck/test/unit/SearchProductServletTest.java</file>
             <file>file:/D:/Study/java/javahehe/ShopDuck/src/java/service/DashboardService.java</file>
             <file>file:/D:/Study/java/javahehe/ShopDuck/web/user/uploads/banner2.png</file>
+            <file>file:/D:/Study/java/javahehe/ShopDuck/test/system/LoginSystemTest.java</file>
             <file>file:/D:/Study/java/javahehe/ShopDuck/test/unit/DashboardServletTest.java</file>
+            <file>file:/D:/Study/java/javahehe/ShopDuck/test/system/AdminUserSystemTest.java</file>
             <file>file:/D:/Study/java/javahehe/ShopDuck/src/java/control/user/CheckoutServlet.java</file>
+            <file>file:/D:/Study/java/javahehe/ShopDuck/test/system/SearchSystemTest.java</file>
             <file>file:/D:/Study/java/javahehe/ShopDuck/test/unit/OrderHistoryServletTest.java</file>
             <file>file:/D:/Study/java/javahehe/ShopDuck/src/java/service/ProductVariantService.java</file>
             <file>file:/D:/Study/java/javahehe/ShopDuck/src/java/entity/Products.java</file>
@@ -42,6 +45,7 @@
             <file>file:/D:/Study/java/javahehe/ShopDuck/src/java/entity/Size.java</file>
             <file>file:/D:/Study/java/javahehe/ShopDuck/web/admin/users/View-users.jsp</file>
             <file>file:/D:/Study/java/javahehe/ShopDuck/build.xml</file>
+            <file>file:/D:/Study/java/javahehe/ShopDuck/test/system/AdminOrderSystemTest.java</file>
             <file>file:/D:/Study/java/javahehe/ShopDuck/src/java/service/LoginService.java</file>
             <file>file:/D:/Study/java/javahehe/ShopDuck/web/admin/order/View-order-detail.jsp</file>
             <file>file:/D:/Study/java/javahehe/ShopDuck/test/unit/ProductDetailServletTest.java</file>
@@ -52,6 +56,7 @@
             <file>file:/D:/Study/java/javahehe/ShopDuck/src/java/dao/OrderDao.java</file>
             <file>file:/D:/Study/java/javahehe/ShopDuck/test/unit/ProductsManagerServletTest.java</file>
             <file>file:/D:/Study/java/javahehe/ShopDuck/src/java/control/user/UpdateCartServlet.java</file>
+            <file>file:/D:/Study/java/javahehe/ShopDuck/test/system/ProductAdminSystemTest.java</file>
             <file>file:/D:/Study/java/javahehe/ShopDuck/web/user/order/order-detail.jsp</file>
             <file>file:/D:/Study/java/javahehe/ShopDuck/test/unit/RegisterServletTest.java</file>
             <file>file:/D:/Study/java/javahehe/ShopDuck/src/java/control/user/ConfirmCheckoutServlet.java</file>
@@ -61,7 +66,10 @@
             <file>file:/D:/Study/java/javahehe/ShopDuck/src/java/service/OrderAdminService.java</file>
             <file>file:/D:/Study/java/javahehe/ShopDuck/test/unit/OrderServiceTest.java</file>
             <file>file:/D:/Study/java/javahehe/ShopDuck/test/unit/ConfirmCheckoutServletTest.java</file>
+            <file>file:/D:/Study/java/javahehe/ShopDuck/test/system/OrderHistorySystemTest.java</file>
             <file>file:/D:/Study/java/javahehe/ShopDuck/src/java/control/LoginServlet.java</file>
+            <file>file:/D:/Study/java/javahehe/ShopDuck/test/system/ProductVariantSystemTest.java</file>
+            <file>file:/D:/Study/java/javahehe/ShopDuck/test/system/CartSystemTest.java</file>
             <file>file:/D:/Study/java/javahehe/ShopDuck/web/admin/order/View-orders.jsp</file>
             <file>file:/D:/Study/java/javahehe/ShopDuck/web/user/order/Checkout.jsp</file>
             <file>file:/D:/Study/java/javahehe/ShopDuck/web/user/uploads/banner1.png</file>
@@ -73,6 +81,7 @@
             <file>file:/D:/Study/java/javahehe/ShopDuck/src/java/control/admin/UsersManagerServlet.java</file>
             <file>file:/D:/Study/java/javahehe/ShopDuck/src/java/dao/ProductDao.java</file>
             <file>file:/D:/Study/java/javahehe/ShopDuck/src/java/control/admin/StatisticsServlet.java</file>
+            <file>file:/D:/Study/java/javahehe/ShopDuck/test/system/CheckoutSystemTest.java</file>
             <file>file:/D:/Study/java/javahehe/ShopDuck/web/admin/products/View-sizes.jsp</file>
             <file>file:/D:/Study/java/javahehe/ShopDuck/test/unit/CartServiceTest.java</file>
             <file>file:/D:/Study/java/javahehe/ShopDuck/test/util/ExcelTestExporter.java</file>
@@ -106,18 +115,21 @@
             <file>file:/D:/Study/java/javahehe/ShopDuck/src/java/entity/ProductVariants.java</file>
             <file>file:/D:/Study/java/javahehe/ShopDuck/web/user/product/info-products.jsp</file>
             <file>file:/D:/Study/java/javahehe/ShopDuck/src/java/service/RegisterResult.java</file>
+            <file>file:/D:/Study/java/javahehe/ShopDuck/test/system/RegisterSystemTest.java</file>
             <file>file:/D:/Study/java/javahehe/ShopDuck/web/user/product/View-products.jsp</file>
             <file>file:/D:/Study/java/javahehe/ShopDuck/test/unit/LoginServiceTest.java</file>
             <file>file:/D:/Study/java/javahehe/ShopDuck/web/user/auth/Register.jsp</file>
             <file>file:/D:/Study/java/javahehe/ShopDuck/src/java/entity/OrderDetails.java</file>
             <file>file:/D:/Study/java/javahehe/ShopDuck/src/java/control/user/AddToCartServlet.java</file>
             <file>file:/D:/Study/java/javahehe/ShopDuck/test/unit/ProductVariantsManagerServletTest.java</file>
+            <file>file:/D:/Study/java/javahehe/ShopDuck/test/system/SizeSystemTest.java</file>
             <file>file:/D:/Study/java/javahehe/ShopDuck/test/unit/CheckoutServletTest.java</file>
             <file>file:/D:/Study/java/javahehe/ShopDuck/web/user/includes/header.jsp</file>
             <file>file:/D:/Study/java/javahehe/ShopDuck/src/java/entity/CartBean.java</file>
             <file>file:/D:/Study/java/javahehe/ShopDuck/web/user/product/searchResult.jsp</file>
             <file>file:/D:/Study/java/javahehe/ShopDuck/src/java/control/admin/ProductVariantsManagerServlet.java</file>
             <file>file:/D:/Study/java/javahehe/ShopDuck/test/unit/UpdateCartServletTest.java</file>
+            <file>file:/D:/Study/java/javahehe/ShopDuck/test/system/StatisticsSystemTest.java</file>
             <file>file:/D:/Study/java/javahehe/ShopDuck/src/java/service/RegisterService.java</file>
         </group>
     </open-files>

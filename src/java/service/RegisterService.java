@@ -30,6 +30,11 @@ public class RegisterService {
             return RegisterResult.INVALID_INPUT;
         }
 
+        // [FIX] Chặn username chứa khoảng trắng (Để PASS testRegister_UsernameWithSpace)
+        if (username.contains(" ")) {
+            return RegisterResult.INVALID_INPUT;
+        }
+
         // 0.5 Kiểm tra độ dài mật khẩu (tối thiểu 6 ký tự)
         if (password.length() < 6) {
             return RegisterResult.INVALID_INPUT;
@@ -48,7 +53,8 @@ public class RegisterService {
 
         // 2. Tạo đối tượng người dùng mới
         // (Lưu ý: Trong thực tế bạn nên mã hóa password tại đây, ví dụ dùng BCrypt)
-        Users newUser = new Users(username, password, fullname, email, "user");
+        // ID=0 vì DB tự tăng, Role mặc định là "user"
+        Users newUser = new Users(0, username, password, fullname, email, "user");
 
         // 3. Gọi DAO để lưu vào database
         // [QUAN TRỌNG] Dùng this.usersDao

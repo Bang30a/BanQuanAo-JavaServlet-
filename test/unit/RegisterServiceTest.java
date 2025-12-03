@@ -39,7 +39,6 @@ public class RegisterServiceTest {
     private String currentSteps = "";
     private String currentData = "";
     private String currentExpected = "";
-    // Đã xóa finalReportData
 
     private void setTestCaseInfo(String id, String name, String steps, String data, String expected) {
         this.currentId = id;
@@ -59,6 +58,7 @@ public class RegisterServiceTest {
                 "User: newuser, Email: new@mail.com", "Result: SUCCESS");
 
         Mockito.when(usersDao.checkUserExists("newuser")).thenReturn(false);
+        // Mockito.when(usersDao.checkEmailExists("new@mail.com")).thenReturn(false); // (Bổ sung nếu có)
         Mockito.when(usersDao.register(any(Users.class))).thenReturn(true);
 
         RegisterResult result = registerService.registerUser("newuser", "123456", "Full Name", "new@mail.com");
@@ -77,6 +77,35 @@ public class RegisterServiceTest {
         
         assertEquals(RegisterResult.USERNAME_EXISTS, result);
     }
+
+    // --- BỔ SUNG 1: TEST USERNAME CHỨA KHOẢNG TRẮNG ---
+    @Test
+    public void testRegister_UsernameWithSpace() {
+        setTestCaseInfo("REG_SVC_09", "Username chứa khoảng trắng", "Nhập 'my user'", 
+                "User: 'my user'", "Result: INVALID_INPUT");
+
+        RegisterResult result = registerService.registerUser("my user", "123456", "Name", "mail@test.com");
+        
+        assertEquals(RegisterResult.INVALID_INPUT, result);
+    }
+
+    // --- BỔ SUNG 2: TEST TRÙNG EMAIL (Nâng cao) ---
+    // (Bỏ comment test này nếu bạn đã implement checkEmailExists trong DAO)
+    /*
+    @Test
+    public void testRegister_EmailExists() {
+        setTestCaseInfo("REG_SVC_10", "Đăng ký trùng Email", "Mock DAO checkEmailExists = true", 
+                "Email: duplicate@mail.com", "Result: EMAIL_EXISTS");
+
+        Mockito.when(usersDao.checkUserExists("newUser")).thenReturn(false);
+        Mockito.when(usersDao.checkEmailExists("duplicate@mail.com")).thenReturn(true);
+
+        RegisterResult result = registerService.registerUser("newUser", "123456", "Name", "duplicate@mail.com");
+        
+        // Bạn cần thêm EMAIL_EXISTS vào enum RegisterResult
+        assertEquals(RegisterResult.EMAIL_EXISTS, result);
+    }
+    */
 
     @Test
     public void testRegister_ShortPassword() {

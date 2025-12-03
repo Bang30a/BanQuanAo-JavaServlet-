@@ -7,80 +7,73 @@ import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-/**
- * Lớp này chứa toàn bộ logic nghiệp vụ để quản lý Người dùng (CRUD).
- */
 public class UserService {
 
     private final UsersDao usersDao;
     private static final Logger LOGGER = Logger.getLogger(UserService.class.getName());
 
-    // Nhận DAO qua constructor
     public UserService(UsersDao usersDao) {
         this.usersDao = usersDao;
     }
 
-    /**
-     * Lấy tất cả người dùng. Trả về danh sách rỗng nếu có lỗi.
-     */
     public List<Users> getAllUsers() {
         try {
             return usersDao.getAllUsers();
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Lỗi khi lấy tất cả người dùng", e);
-            return new ArrayList<>(); // Trả về rỗng an toàn
+            LOGGER.log(Level.SEVERE, "Lỗi lấy danh sách", e);
+            return new ArrayList<>();
         }
     }
 
-    /**
-     * Lấy một người dùng để chỉnh sửa.
-     * Nếu ID = 0 hoặc không tìm thấy, trả về một đối tượng User mới (rỗng).
-     */
     public Users getUserForEdit(int userId) {
         try {
-            if (userId == 0) {
-                return new Users(); // Cho trường hợp "Thêm mới"
-            }
+            if (userId == 0) return new Users();
             Users user = usersDao.getUserById(userId);
-            if (user == null) {
-                return new Users(); // Không tìm thấy, trả về rỗng
-            }
-            return user;
+            return user != null ? user : new Users();
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Lỗi khi lấy người dùng theo ID: " + userId, e);
-            return new Users(); // Trả về rỗng nếu có lỗi
+            LOGGER.log(Level.SEVERE, "Lỗi lấy user", e);
+            return new Users();
         }
     }
 
     /**
-     * Lưu (Thêm mới) hoặc Cập nhật một người dùng.
-     * Trả về true nếu thành công, false nếu thất bại.
+     * SỬA ĐỔI: Trả về String (Thông báo lỗi) thay vì boolean
+     * Để Servlet có thể hiển thị lỗi cụ thể cho người dùng.
      */
-    public boolean saveOrUpdateUser(Users user) {
+    public String saveOrUpdateUser(Users user) {
         try {
-            // Logic "upsert" (update/insert) giống hệt trong servlet gốc
-            if (user.getId() == 0 || usersDao.getUserById(user.getId()) == null) {
-                usersDao.insert(user);
-            } else {
-                usersDao.updateUser(user);
+            // 1. VALIDATION: Kiểm tra rỗng
+            if (user.getUsername() == null || user.getUsername().trim().isEmpty()) {
+                return "Vui lòng nhập Username!";
             }
-            return true;
+            if (user.getPassword() == null || user.getPassword().trim().isEmpty()) {
+                return "Vui lòng nhập Password!";
+            }
+
+            // 2. VALIDATION: Kiểm tra trùng Username (Chỉ khi thêm mới)
+            if (user.getId() == 0 && usersDao.checkUserExists(user.getUsername())) {
+                return "Username đã tồn tại!";
+            }
+
+            // 3. Logic lưu xuống DB
+            boolean success;
+            if (user.getId() == 0 || usersDao.getUserById(user.getId()) == null) {
+                success = usersDao.insert(user);
+            } else {
+                success = usersDao.updateUser(user);
+            }
+            return success ? "SUCCESS" : "Lỗi hệ thống (DB)";
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Lỗi khi lưu/cập nhật người dùng", e);
-            return false;
+            LOGGER.log(Level.SEVERE, "Lỗi saveOrUpdate", e);
+            return "Exception: " + e.getMessage();
         }
     }
 
-    /**
-     * Xóa một người dùng theo ID.
-     * Trả về true nếu thành công, false nếu thất bại.
-     */
     public boolean deleteUser(int userId) {
         try {
-            usersDao.deleteUser(userId);
-            return true;
+            return usersDao.deleteUser(userId);
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Lỗi khi xóa người dùng: " + userId, e);
+            LOGGER.log(Level.SEVERE, "Lỗi xóa user", e);
             return false;
         }
     }

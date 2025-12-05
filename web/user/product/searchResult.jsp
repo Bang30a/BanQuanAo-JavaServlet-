@@ -154,8 +154,8 @@
                         <c:forEach var="p" items="${productList}">
                             <div class="col-6 col-md-4 col-lg-3">
                                 <div class="product-card">
-                                    <!-- Link chi tiết -->
-                                    <a href="${context}/user/product/info-products.jsp?id=${p.id}" class="product-img-wrap">
+                                    <!-- Link chi tiết [ĐÃ SỬA: Trỏ về Servlet thay vì JSP] -->
+                                    <a href="${context}/user/product-detail?id=${p.id}" class="product-img-wrap">
                                         <!-- Logic hiển thị ảnh thông minh -->
                                         <c:choose>
                                             <c:when test="${not empty p.image && p.image.startsWith('http')}">
@@ -172,7 +172,8 @@
                                     </a>
 
                                     <div class="card-body">
-                                        <a href="${context}/user/product/info-products.jsp?id=${p.id}" class="product-title" title="${p.name}">
+                                        <!-- Link tiêu đề [ĐÃ SỬA] -->
+                                        <a href="${context}/user/product-detail?id=${p.id}" class="product-title" title="${p.name}">
                                             ${p.name}
                                         </a>
                                         <div class="product-price">

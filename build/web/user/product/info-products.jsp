@@ -124,14 +124,15 @@
                                     <div class="mb-4">
                                         <label for="variantSelect" class="form-label">Chọn kích thước (Size):</label>
                                         
-                                        <!-- Dùng c:catch để tránh trang trắng nếu code Java bị lỗi -->
+                                        <!-- [SỬA 1] Thêm sự kiện onchange="updateStockDisplay()" -->
                                         <c:catch var="sizeError">
-                                            <select name="variantId" id="variantSelect" class="form-select form-select-custom" required>
+                                            <select name="variantId" id="variantSelect" class="form-select form-select-custom" required onchange="updateStockDisplay()">
                                                 <option value="" selected disabled>-- Vui lòng chọn size --</option>
                                                 <c:choose>
                                                     <c:when test="${not empty variants}">
                                                         <c:forEach var="v" items="${variants}">
-                                                            <option value="${v.id}" ${v.stock <= 0 ? 'disabled' : ''}>
+                                                            <!-- [SỬA 2] Thêm data-stock để lưu tồn kho vào option -->
+                                                            <option value="${v.id}" ${v.stock <= 0 ? 'disabled' : ''} data-stock="${v.stock}">
                                                                 Size ${sizeMap[v.sizeId]} 
                                                                 (
                                                                 <c:choose>
@@ -149,7 +150,6 @@
                                             </select>
                                         </c:catch>
 
-                                        <!-- Hiển thị lỗi nếu có -->
                                         <c:if test="${not empty sizeError}">
                                             <div class="alert alert-danger mt-2 small">
                                                 <strong>Lỗi hiển thị Size:</strong> ${sizeError} <br>
@@ -164,10 +164,12 @@
                                         <div class="d-flex align-items-center gap-3">
                                             <div class="input-group qty-input-group">
                                                 <button class="btn btn-qty" type="button" onclick="updateQty(-1)">-</button>
-                                                <input type="number" name="quantity" id="quantityInput" class="form-control input-qty" value="1" min="1" max="10">
+                                                <!-- [SỬA 3] Bỏ max="10", chỉ để min="1" -->
+                                                <input type="number" name="quantity" id="quantityInput" class="form-control input-qty" value="1" min="1">
                                                 <button class="btn btn-qty" type="button" onclick="updateQty(1)">+</button>
                                             </div>
-                                            <span class="text-muted small">(Tối đa 10 sp/đơn)</span>
+                                            <!-- [SỬA 4] Chỗ hiển thị tồn kho động -->
+                                            <span class="text-muted small" id="stockDisplay"></span>
                                         </div>
                                     </div>
 
@@ -223,14 +225,51 @@
         </div>
     </main>
 
-    <!-- JS Xử lý số lượng -->
+    <!-- JS Xử lý số lượng & Tồn kho -->
     <script>
+        // Hàm cập nhật giới hạn khi chọn Size
+        function updateStockDisplay() {
+            const select = document.getElementById('variantSelect');
+            const input = document.getElementById('quantityInput');
+            const stockDisplay = document.getElementById('stockDisplay');
+            
+            // Lấy option đang chọn
+            const selectedOption = select.options[select.selectedIndex];
+            
+            if (selectedOption && !selectedOption.disabled && selectedOption.value !== "") {
+                // Lấy tồn kho từ data-stock
+                const stock = parseInt(selectedOption.getAttribute('data-stock')) || 9999;
+                
+                // Set max cho input
+                input.max = stock;
+                stockDisplay.innerText = "(Có sẵn: " + stock + " sản phẩm)";
+                
+                // Nếu đang nhập quá số lượng thì reset về max
+                if (parseInt(input.value) > stock) {
+                    input.value = stock;
+                }
+            } else {
+                stockDisplay.innerText = "";
+                input.removeAttribute("max");
+            }
+        }
+
+        // Hàm tăng giảm số lượng (đã sửa để check max động)
         function updateQty(change) {
             const input = document.getElementById('quantityInput');
-            let val = parseInt(input.value);
+            let val = parseInt(input.value) || 1;
+            let max = parseInt(input.max) || 9999; // Mặc định rất lớn nếu chưa chọn size
+            
             val += change;
+            
             if (val < 1) val = 1;
-            if (val > 10) val = 10; // Giới hạn max
+            
+            // Chỉ chặn nếu vượt quá tồn kho thực tế
+            if (val > max) {
+                val = max;
+                alert("Bạn chỉ có thể mua tối đa " + max + " sản phẩm (Hết hàng trong kho).");
+            }
+            
             input.value = val;
         }
     </script>

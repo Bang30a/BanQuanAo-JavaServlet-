@@ -9,13 +9,11 @@ import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.*;
 
-// 1. SỬA URL PATTERN theo yêu cầu
 @WebServlet("/admin/UsersManagerServlet")
 public class UsersManagerServlet extends HttpServlet {
 
     private UserService userService;
 
-    // 2. SỬA INIT: Khởi tạo Service tại đây
     @Override
     public void init() throws ServletException {
         UsersDao usersDao = new UsersDao();
@@ -40,6 +38,7 @@ public class UsersManagerServlet extends HttpServlet {
             }
         } catch (Exception e) {
             e.printStackTrace();
+            // [QUAN TRỌNG] Đây là nơi Test Case 9 kiểm tra
             request.setAttribute("error", "Lỗi hệ thống: " + e.getMessage());
             handleList(request, response);
         }
@@ -47,7 +46,6 @@ public class UsersManagerServlet extends HttpServlet {
 
     private void handleSaveOrUpdate(HttpServletRequest request, HttpServletResponse response)
             throws IOException, ServletException {
-        // Lấy dữ liệu từ form
         String idStr = request.getParameter("id");
         String username = request.getParameter("username");
         String email = request.getParameter("email");
@@ -70,35 +68,44 @@ public class UsersManagerServlet extends HttpServlet {
         user.setEmail(email);
         user.setRole(role);
 
-        // --- QUAN TRỌNG: Logic Validation để vượt qua Unit Test ---
-        // Gọi Service và nhận về thông báo kết quả (String)
         String result = userService.saveOrUpdateUser(user);
 
         if ("SUCCESS".equals(result)) {
-            // Thành công -> Redirect đúng đường dẫn bạn yêu cầu
             response.sendRedirect(request.getContextPath() + "/admin/UsersManagerServlet?action=List");
         } else {
-            // Thất bại -> Forward về lại form nhập và hiện lỗi (Test Case yêu cầu điều này)
             request.setAttribute("ERROR", result); 
             request.setAttribute("USER", user);
             request.setAttribute("ACTION", "SaveOrUpdate");
-            // Đường dẫn JSP theo cấu trúc mới của bạn
             request.getRequestDispatcher("/admin/users/UsersManager.jsp").forward(request, response);
         }
     }
 
+    // [SỬA ĐOẠN NÀY] Tách xử lý lỗi để thỏa mãn cả Test Case 8 và 9
     private void handleDelete(HttpServletRequest request, HttpServletResponse response)
             throws IOException, ServletException {
         String idParam = request.getParameter("id");
+        
+        int id = 0;
         try {
+            // 1. Cố gắng parse ID
             if (idParam != null && !idParam.isEmpty()) {
-                userService.deleteUser(Integer.parseInt(idParam));
+                id = Integer.parseInt(idParam);
             }
-        } catch (Exception e) { 
-            e.printStackTrace(); 
+        } catch (NumberFormatException e) {
+            // Test Case 8: Nếu ID rác -> Catch tại đây và Redirect (không để crash)
+            e.printStackTrace();
+            response.sendRedirect(request.getContextPath() + "/admin/UsersManagerServlet?action=List");
+            return; 
         }
 
-        // Redirect đúng đường dẫn
+        // 2. Gọi Service (KHÔNG dùng try-catch ở đây)
+        // Test Case 9: Nếu Service ném lỗi DB -> Nó sẽ bay ra ngoài method này
+        // và được catch bởi processRequest -> Forward + Báo lỗi
+        if (id > 0) {
+            userService.deleteUser(id);
+        }
+
+        // 3. Nếu thành công -> Redirect
         response.sendRedirect(request.getContextPath() + "/admin/UsersManagerServlet?action=List");
     }
 
@@ -114,7 +121,6 @@ public class UsersManagerServlet extends HttpServlet {
         request.setAttribute("USER", user);
         request.setAttribute("ACTION", "SaveOrUpdate");
         
-        // Forward đúng đường dẫn JSP mới
         request.getRequestDispatcher("/admin/users/UsersManager.jsp").forward(request, response);
     }
 
@@ -123,7 +129,6 @@ public class UsersManagerServlet extends HttpServlet {
         List<Users> userList = userService.getAllUsers(); 
         request.setAttribute("USERS", userList); 
         
-        // Forward đúng đường dẫn JSP mới
         request.getRequestDispatcher("/admin/users/View-users.jsp").forward(request, response);
     }
 

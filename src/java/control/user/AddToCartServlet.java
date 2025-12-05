@@ -55,15 +55,15 @@ public class AddToCartServlet extends HttpServlet {
             if (variant != null) {
                 cart = cartService.addToCart(cart, variant, quantity);
                 session.setAttribute("cart", cart);
-                session.setAttribute("addCartSuccess", "✅ Đã thêm [" + variant.getProductName() + "] vào giỏ hàng!");
+                session.setAttribute("addCartSuccess", "Đã thêm [" + variant.getProductName() + "] vào giỏ hàng!");
             } else {
-                session.setAttribute("addCartError", "❌ Sản phẩm không tồn tại!");
+                session.setAttribute("addCartError", "Sản phẩm không tồn tại!");
             }
             response.sendRedirect(referer);
 
         } catch (Exception e) {
             e.printStackTrace();
-            session.setAttribute("addCartError", "❌ Lỗi khi thêm giỏ hàng.");
+            session.setAttribute("addCartError", "Lỗi khi thêm giỏ hàng.");
             response.sendRedirect(referer);
         }
     }

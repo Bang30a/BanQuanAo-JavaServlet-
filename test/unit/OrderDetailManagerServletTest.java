@@ -13,6 +13,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
@@ -61,7 +62,6 @@ public class OrderDetailManagerServletTest {
     @Before
     public void setUp() throws Exception {
         servlet = new OrderDetailManagerServlet();
-
         try {
             Field serviceField = OrderDetailManagerServlet.class.getDeclaredField("adminService");
             serviceField.setAccessible(true);
@@ -69,16 +69,19 @@ public class OrderDetailManagerServletTest {
         } catch (NoSuchFieldException ignored) {}
     }
 
+    // --- HÀM HỖ TRỢ GỌI DOGET ---
+    private void invokeDoGet() throws Exception {
+        Method doGet = OrderDetailManagerServlet.class.getDeclaredMethod("doGet", HttpServletRequest.class, HttpServletResponse.class);
+        doGet.setAccessible(true);
+        doGet.invoke(servlet, request, response);
+    }
+
+    // --- CASE 1: XEM CHI TIẾT THÀNH CÔNG ---
     @Test
     public void testDoGet_ViewDetails() throws Exception {
-
-        setTestCaseInfo(
-                "ORD_DET_01",
-                "Xem chi tiết đơn hàng",
-                "1. orderId=100\n2. Gọi service getDetails\n3. Forward JSP",
-                "orderId = 100",
-                "Forward → View-order-detail.jsp"
-        );
+        setTestCaseInfo("ORD_DET_01", "Xem chi tiết đơn hàng", 
+                "1. orderId=100\n2. Gọi service getDetails\n3. Forward JSP", 
+                "orderId = 100", "Forward → View-order-detail.jsp");
 
         // Input
         when(request.getParameter("orderId")).thenReturn("100");
@@ -88,12 +91,7 @@ public class OrderDetailManagerServletTest {
         List<OrderDetails> details = new ArrayList<>();
         when(adminService.getDetailsForOrder(100)).thenReturn(details);
 
-        // Run doGet bằng reflection
-        Method doGet = OrderDetailManagerServlet.class
-                .getDeclaredMethod("doGet", HttpServletRequest.class, HttpServletResponse.class);
-
-        doGet.setAccessible(true);
-        doGet.invoke(servlet, request, response);
+        invokeDoGet();
 
         // Verify
         verify(request).setAttribute(eq("ORDER_ID"), eq(100));
@@ -101,23 +99,54 @@ public class OrderDetailManagerServletTest {
         verify(dispatcher).forward(request, response);
     }
 
-    // === THU THẬP KẾT QUẢ TEST ===
-    @Rule
-    public TestWatcher watcher = new TestWatcher() {
+    // --- [MỚI] CASE 2: ID KHÔNG HỢP LỆ (CHỮ) ---
+    @Test
+    public void testDoGet_InvalidId() throws Exception {
+        setTestCaseInfo("ORD_DET_02", "ID lỗi (Chữ)", 
+                "1. orderId='abc'\n2. ParseInt lỗi\n3. Catch & Forward Error", 
+                "orderId = abc", "Forward → error.jsp");
 
-        @Override
-        protected void succeeded(Description description) {
-            ExcelTestExporter.addResult(
-                    currentId, currentName, currentSteps, currentData, currentExpected, "OK", "PASS"
-            );
+        // Input gây lỗi NumberFormat
+        when(request.getParameter("orderId")).thenReturn("abc");
+        // Khi lỗi, servlet sẽ forward về error.jsp
+        when(request.getRequestDispatcher(contains("error.jsp"))).thenReturn(dispatcher);
+
+        invokeDoGet();
+
+        // Verify: Phải set attribute error và forward sang trang lỗi
+        verify(request).setAttribute(eq("error"), contains("For input string"));
+        verify(dispatcher).forward(request, response);
+    }
+
+    // --- [MỚI] CASE 3: LỖI HỆ THỐNG (SERVICE EXCEPTION) ---
+    @Test
+    public void testDoGet_SystemError() throws Exception {
+        setTestCaseInfo("ORD_DET_03", "Lỗi hệ thống (Service)", 
+                "1. orderId=10\n2. Service ném lỗi\n3. Catch & Forward Error", 
+                "Service Exception", "Forward → error.jsp");
+
+        when(request.getParameter("orderId")).thenReturn("10");
+        when(request.getRequestDispatcher(contains("error.jsp"))).thenReturn(dispatcher);
+
+        // Giả lập Service bị lỗi
+        doThrow(new RuntimeException("DB Connection Lost")).when(adminService).getDetailsForOrder(10);
+
+        invokeDoGet();
+
+        // Verify
+        verify(request).setAttribute(eq("error"), contains("DB Connection Lost"));
+        verify(dispatcher).forward(request, response);
+    }
+
+    // === EXCEL EXPORT ===
+    @Rule public TestWatcher watcher = new TestWatcher() {
+        @Override protected void succeeded(Description d) { 
+            // [SỬA] Đảo vị trí currentData và currentSteps để khớp với file Excel
+            ExcelTestExporter.addResult(currentId, currentName, currentData, currentSteps, currentExpected, "OK", "PASS"); 
         }
-
-        @Override
-        protected void failed(Throwable e, Description description) {
-            ExcelTestExporter.addResult(
-                    currentId, currentName, currentSteps, currentData, currentExpected,
-                    e.getMessage(), "FAIL"
-            );
+        @Override protected void failed(Throwable e, Description d) { 
+            // [SỬA] Đảo vị trí currentData và currentSteps
+            ExcelTestExporter.addResult(currentId, currentName, currentData, currentSteps, currentExpected, e.getMessage(), "FAIL"); 
         }
     };
 

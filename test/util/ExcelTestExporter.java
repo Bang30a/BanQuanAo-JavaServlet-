@@ -117,11 +117,11 @@ public class ExcelTestExporter {
             // Lưu file
             try (FileOutputStream fileOut = new FileOutputStream(fileName.replace(".csv", ".xlsx"))) {
                 workbook.write(fileOut);
-                System.out.println("✅ XUẤT EXCEL THÀNH CÔNG! File: " + fileName.replace(".csv", ".xlsx"));
+                System.out.println("XUẤT EXCEL THÀNH CÔNG! File: " + fileName.replace(".csv", ".xlsx"));
             }
 
         } catch (IOException e) {
-            System.err.println("❌ Lỗi xuất Excel: " + e.getMessage());
+            System.err.println("Lỗi xuất Excel: " + e.getMessage());
         }
     }
 }

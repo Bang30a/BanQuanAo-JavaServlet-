@@ -12,6 +12,21 @@ import javax.servlet.http.*;
 @WebServlet("/admin/statistics")
 public class StatisticsServlet extends HttpServlet {
 
+    private DashboardDao dao;
+
+    // [MỚI] Setter để Inject Mock DAO
+    public void setDao(DashboardDao dao) {
+        this.dao = dao;
+    }
+
+    // [MỚI] Getter lazy load
+    private DashboardDao getDao() {
+        if (dao == null) {
+            dao = new DashboardDao();
+        }
+        return dao;
+    }
+
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         
@@ -27,19 +42,20 @@ public class StatisticsServlet extends HttpServlet {
             endDate = today.toString();
         }
 
-        DashboardDao dao = new DashboardDao();
+        // [SỬA] Dùng getDao()
+        DashboardDao dashboardDao = getDao();
         
         // 1. Số liệu tổng quan trong khoảng thời gian
-        double revenue = dao.getRevenueByDate(startDate, endDate);
-        int orders = dao.getOrderCountByDate(startDate, endDate);
+        double revenue = dashboardDao.getRevenueByDate(startDate, endDate);
+        int orders = dashboardDao.getOrderCountByDate(startDate, endDate);
         
-        // 2. BẢNG DỮ LIỆU chi tiết (Top sản phẩm bán trong khoảng thời gian này)
-        List<Map<String, Object>> reportData = dao.getTopSellingProductsByDate(startDate, endDate);
+        // 2. BẢNG DỮ LIỆU chi tiết
+        List<Map<String, Object>> reportData = dashboardDao.getTopSellingProductsByDate(startDate, endDate);
 
         // 3. Đẩy ra JSP
         request.setAttribute("revenue", revenue);
         request.setAttribute("orders", orders);
-        request.setAttribute("reportData", reportData); // Dữ liệu cho bảng
+        request.setAttribute("reportData", reportData);
         
         request.setAttribute("start", startDate);
         request.setAttribute("end", endDate);

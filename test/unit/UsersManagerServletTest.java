@@ -97,7 +97,7 @@ public class UsersManagerServletTest {
         verify(dispatcher).forward(request, response);
     }
 
-    // --- CASE 3: LƯU THÀNH CÔNG (Happy Path) ---
+    // --- CASE 3: LƯU THÀNH CÔNG ---
     @Test
     public void testDoPost_Save_Success() throws Exception {
         setTestCaseInfo("USER_MGR_03", "Lưu User thành công", 
@@ -114,7 +114,7 @@ public class UsersManagerServletTest {
         verify(response).sendRedirect(contains("/admin/UsersManagerServlet?action=List"));
     }
 
-    // --- CASE 4: LƯU THẤT BẠI - DỮ LIỆU RỖNG (Negative Path) ---
+    // --- CASE 4: LƯU THẤT BẠI - DỮ LIỆU RỖNG ---
     @Test
     public void testDoPost_Save_EmptyData() throws Exception {
         setTestCaseInfo("USER_MGR_04", "Lỗi: Dữ liệu rỗng", 
@@ -134,7 +134,7 @@ public class UsersManagerServletTest {
         verify(dispatcher).forward(request, response);
     }
 
-    // --- CASE 5: LƯU THẤT BẠI - TRÙNG USERNAME (Negative Path) ---
+    // --- CASE 5: LƯU THẤT BẠI - TRÙNG USERNAME ---
     @Test
     public void testDoPost_Save_Duplicate() throws Exception {
         setTestCaseInfo("USER_MGR_05", "Lỗi: Trùng Username", 
@@ -167,6 +167,64 @@ public class UsersManagerServletTest {
         verify(response).sendRedirect(contains("action=List"));
     }
 
+    // --- [MỚI] CASE 7: ACTION MẶC ĐỊNH ---
+    @Test
+    public void testDoGet_DefaultAction() throws Exception {
+        setTestCaseInfo("USER_MGR_07", "Action Null -> Mặc định List", 
+                "Action=null", "Null", "Forward View-users.jsp");
+
+        // Giả lập action bị null
+        when(request.getParameter("action")).thenReturn(null);
+        when(request.getRequestDispatcher(contains("View-users.jsp"))).thenReturn(dispatcher);
+        
+        invokeDoGet();
+
+        // Verify: Phải gọi hàm handleList (tức là getAllUsers)
+        verify(userService).getAllUsers();
+        verify(dispatcher).forward(request, response);
+    }
+
+    // --- [MỚI] CASE 8: XÓA ID RÁC (NGOẠI LỆ SỐ) ---
+    @Test
+    public void testDoGet_Delete_InvalidId() throws Exception {
+        setTestCaseInfo("USER_MGR_08", "Xóa ID không phải số", 
+                "Action='Delete', ID='abc'", "ID='abc'", "Không gọi service, Redirect List");
+
+        when(request.getParameter("action")).thenReturn("Delete");
+        when(request.getParameter("id")).thenReturn("abc"); // ID rác
+        when(request.getContextPath()).thenReturn("/ShopDuck");
+
+        invokeDoGet();
+
+        // Verify: Service KHÔNG được gọi hàm deleteUser (vì parse int lỗi)
+        verify(userService, never()).deleteUser(anyInt());
+        // Verify: Vẫn phải redirect về trang danh sách (không được chết trang)
+        verify(response).sendRedirect(contains("action=List"));
+    }
+
+    // --- [MỚI] CASE 9: LỖI HỆ THỐNG (TRY-CATCH) ---
+    @Test
+    public void testProcessRequest_SystemError() throws Exception {
+        setTestCaseInfo("USER_MGR_09", "Lỗi hệ thống (Exception)", 
+                "Service ném lỗi", "RuntimeException", "Catch lỗi & Forward List kèm thông báo");
+
+        when(request.getParameter("action")).thenReturn("Delete");
+        when(request.getParameter("id")).thenReturn("10");
+        // Giả lập Service bị lỗi (VD: Mất kết nối DB)
+        doThrow(new RuntimeException("DB Connection Failed")).when(userService).deleteUser(10);
+        
+        when(request.getRequestDispatcher(contains("View-users.jsp"))).thenReturn(dispatcher);
+
+        invokeDoGet();
+
+        // Verify:
+        // 1. Phải set attribute "error" (như trong catch block của Servlet)
+        verify(request).setAttribute(eq("error"), contains("DB Connection Failed"));
+        // 2. Phải gọi lại handleList (tức là getAllUsers và forward về view)
+        verify(userService).getAllUsers();
+        verify(dispatcher).forward(request, response);
+    }
+
     // === HELPER METHODS ===
     private void invokeDoGet() throws Exception {
         Method doGet = UsersManagerServlet.class.getDeclaredMethod("doGet", HttpServletRequest.class, HttpServletResponse.class);
@@ -189,11 +247,18 @@ public class UsersManagerServletTest {
         when(request.getParameter("role")).thenReturn("user");
     }
 
-    // === XUẤT EXCEL ===
+     // === EXCEL EXPORT ===
     @Rule public TestWatcher watcher = new TestWatcher() {
-        @Override protected void succeeded(Description d) { ExcelTestExporter.addResult(currentId, currentName, currentSteps, currentData, currentExpected, "OK", "PASS"); }
-        @Override protected void failed(Throwable e, Description d) { ExcelTestExporter.addResult(currentId, currentName, currentSteps, currentData, currentExpected, e.getMessage(), "FAIL"); }
+        @Override protected void succeeded(Description d) { 
+            // [SỬA] Đảo vị trí currentData và currentSteps để khớp với file Excel
+            ExcelTestExporter.addResult(currentId, currentName, currentData, currentSteps, currentExpected, "OK", "PASS"); 
+        }
+        @Override protected void failed(Throwable e, Description d) { 
+            // [SỬA] Đảo vị trí currentData và currentSteps
+            ExcelTestExporter.addResult(currentId, currentName, currentData, currentSteps, currentExpected, e.getMessage(), "FAIL"); 
+        }
     };
+
 
     @AfterClass public static void exportReport() { ExcelTestExporter.exportToExcel("KetQuaTest_UsersManagerServlet.xlsx"); }
 }

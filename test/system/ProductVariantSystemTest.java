@@ -30,7 +30,7 @@ public class ProductVariantSystemTest {
     String dashboardUrl = "http://localhost:8080/ShopDuck/admin/dashboard/index.jsp";
 
     // --- CẤU HÌNH TEST DATA ---
-    String targetProductId = "35"; 
+    String targetProductId = "32"; 
     String targetSizeId = "1"; 
     
     static int uniqueSeed = new Random().nextInt(9000) + 1000;

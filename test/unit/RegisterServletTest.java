@@ -45,7 +45,6 @@ public class RegisterServletTest {
     private String currentSteps = "";
     private String currentData = "";
     private String currentExpected = "";
-    // Đã xóa list finalReportData
 
     private void setTestCaseInfo(String id, String name, String steps, String data, String expected) {
         this.currentId = id;
@@ -58,23 +57,24 @@ public class RegisterServletTest {
     @Before
     public void setUp() {
         servlet = new RegisterServlet();
-        // Giả định RegisterServlet có setter hoặc dùng reflection nếu field là private
-        // Ở đây giữ nguyên theo code cũ của bạn
+        // Inject Mock DAO vào Servlet
         servlet.setUsersDao(usersDao); 
     }
 
+    // --- CASE 1: Đăng ký thành công ---
     @Test
     public void testDoPost_RegisterSuccess() throws Exception {
         setTestCaseInfo("REG_SERV_01", "Servlet: Đăng ký thành công", 
-                "1. Mock input\n2. Mock DAO register=true\n3. Call doPost", 
-                "User: new, Pass: 123", "Redirect: Login.jsp");
+                "1. Mock input hợp lệ\n2. Mock DAO register=true\n3. Call doPost", 
+                "User: new, Pass: 123456", "Redirect: Login.jsp");
 
         // 1. Mock Request
         when(request.getParameter("username")).thenReturn("newuser");
-        when(request.getParameter("password")).thenReturn("123456");
+        when(request.getParameter("password")).thenReturn("123456"); // Pass >= 6 chars
         when(request.getParameter("fullname")).thenReturn("New User");
         when(request.getParameter("email")).thenReturn("new@mail.com");
         when(request.getSession()).thenReturn(session);
+        when(request.getContextPath()).thenReturn("/ShopDuck");
 
         // 2. Mock DAO Behavior
         when(usersDao.checkUserExists("newuser")).thenReturn(false);
@@ -90,15 +90,41 @@ public class RegisterServletTest {
         verify(response).sendRedirect(contains("/user/auth/Login.jsp"));
     }
 
+    // --- CASE 2: Mật khẩu yếu (MỚI) ---
+    @Test
+    public void testDoPost_WeakPassword() throws Exception {
+        setTestCaseInfo("REG_SERV_02", "Servlet: Mật khẩu yếu", 
+                "1. Mock pass ngắn (<6 ký tự)\n2. Call doPost", 
+                "Pass: 123", "Báo lỗi 'Mật khẩu quá yếu'");
+
+        when(request.getParameter("username")).thenReturn("user");
+        when(request.getParameter("password")).thenReturn("123"); // Pass ngắn
+        when(request.getSession()).thenReturn(session);
+        when(request.getContextPath()).thenReturn("/ShopDuck");
+
+        Method doPost = RegisterServlet.class.getDeclaredMethod("doPost", HttpServletRequest.class, HttpServletResponse.class);
+        doPost.setAccessible(true);
+        doPost.invoke(servlet, request, response);
+
+        // Verify: Phải set attribute lỗi mật khẩu và redirect lại trang register
+        verify(session).setAttribute(eq("registerError"), contains("Mật khẩu quá yếu"));
+        verify(response).sendRedirect(contains("/user/auth/Register.jsp"));
+        
+        // Verify phụ: Không được gọi tới DAO checkUserExists hay register
+        verify(usersDao, never()).checkUserExists(anyString());
+    }
+
+    // --- CASE 3: Trùng tên đăng nhập ---
     @Test
     public void testDoPost_UserExists() throws Exception {
-        setTestCaseInfo("REG_SERV_02", "Servlet: Trùng tên đăng nhập", 
+        setTestCaseInfo("REG_SERV_03", "Servlet: Trùng tên đăng nhập", 
                 "1. Mock DAO checkExists=true", 
                 "User: exist", "Redirect: Register.jsp + Error");
 
         when(request.getParameter("username")).thenReturn("exist");
         when(request.getParameter("password")).thenReturn("123456");
         when(request.getSession()).thenReturn(session);
+        when(request.getContextPath()).thenReturn("/ShopDuck");
 
         when(usersDao.checkUserExists("exist")).thenReturn(true);
 
@@ -110,15 +136,17 @@ public class RegisterServletTest {
         verify(response).sendRedirect(contains("/user/auth/Register.jsp"));
     }
 
+    // --- CASE 4: Lỗi Database ---
     @Test
     public void testDoPost_DbError() throws Exception {
-        setTestCaseInfo("REG_SERV_03", "Servlet: Lỗi Database", 
+        setTestCaseInfo("REG_SERV_04", "Servlet: Lỗi Database", 
                 "1. Mock DAO register=false", 
                 "User: valid", "Redirect: Register.jsp + Error");
 
         when(request.getParameter("username")).thenReturn("valid");
         when(request.getParameter("password")).thenReturn("123456");
         when(request.getSession()).thenReturn(session);
+        when(request.getContextPath()).thenReturn("/ShopDuck");
 
         when(usersDao.checkUserExists("valid")).thenReturn(false);
         when(usersDao.register(any(Users.class))).thenReturn(false);
@@ -131,22 +159,21 @@ public class RegisterServletTest {
         verify(response).sendRedirect(contains("/user/auth/Register.jsp"));
     }
 
-    // === XUẤT EXCEL MỚI ===
-    @Rule
-    public TestWatcher watcher = new TestWatcher() {
-        @Override
-        protected void succeeded(Description description) {
-            ExcelTestExporter.addResult(currentId, currentName, currentSteps, currentData, currentExpected, "OK", "PASS");
+     // === EXCEL EXPORT ===
+    @Rule public TestWatcher watcher = new TestWatcher() {
+        @Override protected void succeeded(Description d) { 
+            // [SỬA] Đảo vị trí currentData và currentSteps để khớp với file Excel
+            ExcelTestExporter.addResult(currentId, currentName, currentData, currentSteps, currentExpected, "OK", "PASS"); 
         }
-        @Override
-        protected void failed(Throwable e, Description description) {
-            ExcelTestExporter.addResult(currentId, currentName, currentSteps, currentData, currentExpected, e.getMessage(), "FAIL");
+        @Override protected void failed(Throwable e, Description d) { 
+            // [SỬA] Đảo vị trí currentData và currentSteps
+            ExcelTestExporter.addResult(currentId, currentName, currentData, currentSteps, currentExpected, e.getMessage(), "FAIL"); 
         }
     };
 
+
     @AfterClass
     public static void exportReport() {
-        // Xuất ra file .xlsx
         ExcelTestExporter.exportToExcel("KetQuaTest_RegisterServlet.xlsx");
     }
 }

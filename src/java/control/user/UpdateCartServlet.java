@@ -1,5 +1,7 @@
 package control.user;
 
+import dao.ProductVariantDao;
+import entity.ProductVariants;
 import entity.CartBean;
 import service.CartService;
 
@@ -16,6 +18,20 @@ import java.util.List;
 public class UpdateCartServlet extends HttpServlet {
 
     private CartService cartService;
+    private ProductVariantDao variantDao; // [MỚI] Biến instance cho DAO
+
+    // [MỚI] Setter để Inject Mock DAO khi test
+    public void setVariantDao(ProductVariantDao variantDao) {
+        this.variantDao = variantDao;
+    }
+
+    // [MỚI] Getter lazy load (để chạy thật vẫn ổn)
+    private ProductVariantDao getVariantDao() {
+        if (variantDao == null) {
+            variantDao = new ProductVariantDao();
+        }
+        return variantDao;
+    }
 
     @Override
     public void init() throws ServletException {
@@ -29,10 +45,8 @@ public class UpdateCartServlet extends HttpServlet {
         HttpSession session = request.getSession();
         List<CartBean> cart = (List<CartBean>) session.getAttribute("cart");
         
-        // Trang giỏ hàng mặc định
         String cartPage = request.getContextPath() + "/user/order/view-cart.jsp";
 
-        // Nếu giỏ null, quay về luôn
         if (cart == null) {
             response.sendRedirect(cartPage);
             return;
@@ -46,10 +60,22 @@ public class UpdateCartServlet extends HttpServlet {
                 int variantId = Integer.parseInt(idStr);
                 int newQuantity = Integer.parseInt(qtyStr);
 
-                // Gọi Service để xử lý logic update (hoặc xóa nếu qty=0)
+                // --- LOGIC KIỂM TRA TỒN KHO ---
+                // [SỬA] Dùng getter thay vì new trực tiếp
+                ProductVariantDao dao = getVariantDao(); 
+                ProductVariants variant = dao.findById(variantId);
+
+                if (variant != null) {
+                    int currentStock = variant.getStock();
+
+                    if (newQuantity > currentStock) {
+                        newQuantity = currentStock; // Reset về max
+                        session.setAttribute("cartError", "Rất tiếc! Sản phẩm này chỉ còn " + currentStock + " cái trong kho.");
+                    }
+                }
+
+                // Gọi Service
                 cartService.updateQuantity(cart, variantId, newQuantity);
-                
-                // Cập nhật lại session
                 session.setAttribute("cart", cart);
             }
         } catch (NumberFormatException e) {
@@ -58,7 +84,6 @@ public class UpdateCartServlet extends HttpServlet {
             e.printStackTrace();
         }
 
-        // Quay lại trang giỏ hàng
         response.sendRedirect(cartPage);
     }
 }

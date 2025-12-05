@@ -1,13 +1,13 @@
 package unit;
 
-// === IMPORT LOGIC ===
+// === IMPORT LOGIC CHÍNH ===
 import dao.UsersDao;
 import entity.Users;
-import service.RegisterService;
 import service.RegisterResult;
+import service.RegisterService;
 import util.ExcelTestExporter; // <-- Import class tiện ích
 
-// === IMPORT TEST ===
+// === IMPORT JUNIT & MOCKITO ===
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -24,6 +24,9 @@ import org.junit.Rule;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 
+/**
+ * Unit Test cho RegisterService.
+ */
 @RunWith(MockitoJUnitRunner.class)
 public class RegisterServiceTest {
 
@@ -58,7 +61,6 @@ public class RegisterServiceTest {
                 "User: newuser, Email: new@mail.com", "Result: SUCCESS");
 
         Mockito.when(usersDao.checkUserExists("newuser")).thenReturn(false);
-        // Mockito.when(usersDao.checkEmailExists("new@mail.com")).thenReturn(false); // (Bổ sung nếu có)
         Mockito.when(usersDao.register(any(Users.class))).thenReturn(true);
 
         RegisterResult result = registerService.registerUser("newuser", "123456", "Full Name", "new@mail.com");
@@ -78,10 +80,9 @@ public class RegisterServiceTest {
         assertEquals(RegisterResult.USERNAME_EXISTS, result);
     }
 
-    // --- BỔ SUNG 1: TEST USERNAME CHỨA KHOẢNG TRẮNG ---
     @Test
     public void testRegister_UsernameWithSpace() {
-        setTestCaseInfo("REG_SVC_09", "Username chứa khoảng trắng", "Nhập 'my user'", 
+        setTestCaseInfo("REG_SVC_03", "Username chứa khoảng trắng", "Nhập 'my user'", 
                 "User: 'my user'", "Result: INVALID_INPUT");
 
         RegisterResult result = registerService.registerUser("my user", "123456", "Name", "mail@test.com");
@@ -89,27 +90,9 @@ public class RegisterServiceTest {
         assertEquals(RegisterResult.INVALID_INPUT, result);
     }
 
-    // --- BỔ SUNG 2: TEST TRÙNG EMAIL (Nâng cao) ---
-    // (Bỏ comment test này nếu bạn đã implement checkEmailExists trong DAO)
-    /*
-    @Test
-    public void testRegister_EmailExists() {
-        setTestCaseInfo("REG_SVC_10", "Đăng ký trùng Email", "Mock DAO checkEmailExists = true", 
-                "Email: duplicate@mail.com", "Result: EMAIL_EXISTS");
-
-        Mockito.when(usersDao.checkUserExists("newUser")).thenReturn(false);
-        Mockito.when(usersDao.checkEmailExists("duplicate@mail.com")).thenReturn(true);
-
-        RegisterResult result = registerService.registerUser("newUser", "123456", "Name", "duplicate@mail.com");
-        
-        // Bạn cần thêm EMAIL_EXISTS vào enum RegisterResult
-        assertEquals(RegisterResult.EMAIL_EXISTS, result);
-    }
-    */
-
     @Test
     public void testRegister_ShortPassword() {
-        setTestCaseInfo("REG_SVC_03", "Mật khẩu quá ngắn (<6)", "Nhập pass 3 ký tự", 
+        setTestCaseInfo("REG_SVC_04", "Mật khẩu quá ngắn (<6)", "Nhập pass 3 ký tự", 
                 "Pass: 123", "Result: INVALID_INPUT");
 
         RegisterResult result = registerService.registerUser("user", "123", "Name", "mail@test.com");
@@ -119,7 +102,7 @@ public class RegisterServiceTest {
 
     @Test
     public void testRegister_InvalidEmail() {
-        setTestCaseInfo("REG_SVC_04", "Email sai định dạng", "Nhập email không có @", 
+        setTestCaseInfo("REG_SVC_05", "Email thiếu ký tự @", "Nhập email không có @", 
                 "Email: invalid-email", "Result: INVALID_INPUT");
 
         RegisterResult result = registerService.registerUser("user", "123456", "Name", "invalid-email");
@@ -127,9 +110,25 @@ public class RegisterServiceTest {
         assertEquals(RegisterResult.INVALID_INPUT, result);
     }
 
+    // --- [MỚI] TEST CASE: EMAIL SAI TLD (Check Regex kỹ hơn) ---
+    @Test
+    public void testRegister_EmailTLDInvalid() {
+        setTestCaseInfo("REG_SVC_06", "Email sai đuôi tên miền", 
+                "Check Regex {2,6}: Đuôi quá ngắn (.c) hoặc quá dài", 
+                "Email: test@domain.c", "Result: INVALID_INPUT");
+
+        // Trường hợp 1: Đuôi 1 ký tự (Regex yêu cầu min 2)
+        RegisterResult result1 = registerService.registerUser("user", "123456", "Name", "test@domain.c");
+        assertEquals("Đuôi 1 ký tự phải fail", RegisterResult.INVALID_INPUT, result1);
+
+        // Trường hợp 2: Đuôi 7 ký tự (Regex yêu cầu max 6)
+        RegisterResult result2 = registerService.registerUser("user", "123456", "Name", "test@domain.toolong");
+        assertEquals("Đuôi 7 ký tự phải fail", RegisterResult.INVALID_INPUT, result2);
+    }
+
     @Test
     public void testRegister_DaoFails() {
-        setTestCaseInfo("REG_SVC_05", "Lỗi DB khi Insert", "Mock DAO register trả về false", 
+        setTestCaseInfo("REG_SVC_07", "Lỗi DB khi Insert", "Mock DAO register trả về false", 
                 "Data hợp lệ", "Result: REGISTRATION_FAILED");
 
         Mockito.when(usersDao.checkUserExists("user")).thenReturn(false);
@@ -142,7 +141,7 @@ public class RegisterServiceTest {
     
     @Test
     public void testRegister_NullInput() {
-        setTestCaseInfo("REG_SVC_06", "Đăng ký với Input Null", "Truyền username = null", "User: null", "Result: INVALID_INPUT");
+        setTestCaseInfo("REG_SVC_08", "Đăng ký với Input Null", "Truyền username = null", "User: null", "Result: INVALID_INPUT");
 
         RegisterResult result = registerService.registerUser(null, "123456", "Name", "mail@test.com");
         
@@ -151,16 +150,27 @@ public class RegisterServiceTest {
 
     @Test
     public void testRegister_EmptyInput() {
-        setTestCaseInfo("REG_SVC_07", "Đăng ký với Input Rỗng", "Truyền username = \"\" (chuỗi rỗng)", "User: \"\"", "Result: INVALID_INPUT");
+        setTestCaseInfo("REG_SVC_09", "Đăng ký với Input Rỗng", "Truyền username = \"\"", "User: \"\"", "Result: INVALID_INPUT");
 
         RegisterResult result = registerService.registerUser("", "123456", "Name", "mail@test.com");
         
         assertEquals(RegisterResult.INVALID_INPUT, result);
     }
 
+    // --- [MỚI] TEST CASE: INPUT TOÀN KHOẢNG TRẮNG ---
+    @Test
+    public void testRegister_WhitespaceInput() {
+        setTestCaseInfo("REG_SVC_10", "Đăng ký với Input toàn Space", 
+                "Check logic trim().isEmpty()", "User: \"   \"", "Result: INVALID_INPUT");
+
+        // Username chỉ chứa khoảng trắng
+        RegisterResult result = registerService.registerUser("   ", "123456", "Name", "mail@test.com");
+        assertEquals(RegisterResult.INVALID_INPUT, result);
+    }
+
     @Test
     public void testRegister_PasswordBoundary() {
-        setTestCaseInfo("REG_SVC_08", "Mật khẩu đúng 6 ký tự (Biên)", "Pass dài 6 ký tự (hợp lệ)", "Pass: 123456", "Result: SUCCESS");
+        setTestCaseInfo("REG_SVC_11", "Mật khẩu đúng 6 ký tự (Biên)", "Pass dài 6 ký tự (hợp lệ)", "Pass: 123456", "Result: SUCCESS");
 
         Mockito.when(usersDao.checkUserExists("boundaryUser")).thenReturn(false);
         Mockito.when(usersDao.register(any(Users.class))).thenReturn(true);
@@ -170,24 +180,21 @@ public class RegisterServiceTest {
         assertEquals(RegisterResult.SUCCESS, result);
     }
 
-    // ==========================================
-    // XUẤT EXCEL (MỚI)
-    // ==========================================
-    @Rule
-    public TestWatcher watcher = new TestWatcher() {
-        @Override
-        protected void succeeded(Description description) {
-            ExcelTestExporter.addResult(currentId, currentName, currentSteps, currentData, currentExpected, "OK", "PASS");
+     // === EXCEL EXPORT ===
+    @Rule public TestWatcher watcher = new TestWatcher() {
+        @Override protected void succeeded(Description d) { 
+            // [SỬA] Đảo vị trí currentData và currentSteps để khớp với file Excel
+            ExcelTestExporter.addResult(currentId, currentName, currentData, currentSteps, currentExpected, "OK", "PASS"); 
         }
-        @Override
-        protected void failed(Throwable e, Description description) {
-            ExcelTestExporter.addResult(currentId, currentName, currentSteps, currentData, currentExpected, e.getMessage(), "FAIL");
+        @Override protected void failed(Throwable e, Description d) { 
+            // [SỬA] Đảo vị trí currentData và currentSteps
+            ExcelTestExporter.addResult(currentId, currentName, currentData, currentSteps, currentExpected, e.getMessage(), "FAIL"); 
         }
     };
 
+
     @AfterClass
     public static void exportReport() {
-        // Xuất ra file .xlsx
         ExcelTestExporter.exportToExcel("KetQuaTest_RegisterService.xlsx");
     }
 }

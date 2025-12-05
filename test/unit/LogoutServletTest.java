@@ -104,18 +104,18 @@ public class LogoutServletTest {
         verify(response).sendRedirect(contains("/user/auth/Login.jsp"));
     }
 
-    // === EXCEL REPORT ===
-    @Rule
-    public TestWatcher watcher = new TestWatcher() {
-        @Override
-        protected void succeeded(Description description) {
-            ExcelTestExporter.addResult(currentId, currentName, currentSteps, currentData, currentExpected, "OK", "PASS");
+     // === EXCEL EXPORT ===
+    @Rule public TestWatcher watcher = new TestWatcher() {
+        @Override protected void succeeded(Description d) { 
+            // [SỬA] Đảo vị trí currentData và currentSteps để khớp với file Excel
+            ExcelTestExporter.addResult(currentId, currentName, currentData, currentSteps, currentExpected, "OK", "PASS"); 
         }
-        @Override
-        protected void failed(Throwable e, Description description) {
-            ExcelTestExporter.addResult(currentId, currentName, currentSteps, currentData, currentExpected, e.getMessage(), "FAIL");
+        @Override protected void failed(Throwable e, Description d) { 
+            // [SỬA] Đảo vị trí currentData và currentSteps
+            ExcelTestExporter.addResult(currentId, currentName, currentData, currentSteps, currentExpected, e.getMessage(), "FAIL"); 
         }
     };
+
 
     @AfterClass
     public static void exportReport() {

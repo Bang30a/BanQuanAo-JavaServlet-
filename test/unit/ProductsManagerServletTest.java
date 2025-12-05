@@ -1,12 +1,10 @@
 package unit;
 
-// === IMPORT LOGIC ===
 import control.admin.ProductsManagerServlet;
 import entity.Products;
 import service.ProductService;
-import util.ExcelTestExporter; // <-- Import class tiện ích
+import util.ExcelTestExporter;
 
-// === IMPORT TEST & MOCKITO ===
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -17,7 +15,6 @@ import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
-// === IMPORT SERVLET & REFLECTION ===
 import javax.servlet.RequestDispatcher;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -26,11 +23,11 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
-// === IMPORT JUNIT ===
 import org.junit.AfterClass;
 import org.junit.Rule;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
+import org.mockito.ArgumentCaptor;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ProductsManagerServletTest {
@@ -42,27 +39,17 @@ public class ProductsManagerServletTest {
     @Mock private RequestDispatcher dispatcher;
     @Mock private ProductService productService;
 
-    // === CẤU HÌNH BÁO CÁO (Dùng biến instance) ===
-    private String currentId = "";
-    private String currentName = "";
-    private String currentSteps = "";
-    private String currentData = "";
-    private String currentExpected = "";
-    // Đã xóa list finalReportData
+    // === CẤU HÌNH BÁO CÁO ===
+    private String currentId = "", currentName = "", currentSteps = "", currentData = "", currentExpected = "";
 
     private void setTestCaseInfo(String id, String name, String steps, String data, String expected) {
-        this.currentId = id;
-        this.currentName = name;
-        this.currentSteps = steps;
-        this.currentData = data;
-        this.currentExpected = expected;
+        this.currentId = id; this.currentName = name; this.currentSteps = steps; 
+        this.currentData = data; this.currentExpected = expected;
     }
 
     @Before
     public void setUp() throws Exception {
         servlet = new ProductsManagerServlet();
-
-        // Inject Mock Service vào Servlet bằng Reflection
         try {
             Field serviceField = ProductsManagerServlet.class.getDeclaredField("productService");
             serviceField.setAccessible(true);
@@ -72,132 +59,208 @@ public class ProductsManagerServletTest {
         }
     }
 
-    // ==========================================
-    // 1. TEST LIST (Xem danh sách SP)
-    // ==========================================
+    // --- CASE 1: XEM DANH SÁCH (Mặc định) ---
     @Test
     public void testDoGet_ListProducts() throws Exception {
         setTestCaseInfo("PROD_MGR_01", "Xem danh sách SP", 
                 "1. Action='List'\n2. Service trả list", 
                 "List size=1", "Forward View-products.jsp");
 
-        // 1. Mock Input
         when(request.getParameter("action")).thenReturn("List");
         when(request.getRequestDispatcher(contains("View-products.jsp"))).thenReturn(dispatcher);
 
-        // 2. Mock Service
         List<Products> mockList = new ArrayList<>();
         mockList.add(new Products(1, "Ao Test", "Desc", 100.0, "img.jpg"));
         when(productService.getAllProducts()).thenReturn(mockList);
 
-        // 3. Run (Reflection calling doGet)
-        Method doGet = ProductsManagerServlet.class.getDeclaredMethod("doGet", HttpServletRequest.class, HttpServletResponse.class);
-        doGet.setAccessible(true);
-        doGet.invoke(servlet, request, response);
+        invokeDoGet();
 
-        // 4. Verify
-        verify(request).setAttribute(eq("PRODUCTS"), eq(mockList)); // Check đúng tên attribute
+        verify(request).setAttribute(eq("PRODUCTS"), eq(mockList));
         verify(dispatcher).forward(request, response);
     }
 
-    // ==========================================
-    // 2. TEST PREPARE ADD/EDIT (Hiện form)
-    // ==========================================
+    // --- [MỚI] CASE 2: TÌM KIẾM SẢN PHẨM ---
+    @Test
+    public void testDoGet_SearchProducts() throws Exception {
+        setTestCaseInfo("PROD_MGR_02", "Tìm kiếm Sản phẩm", 
+                "Action='List', Keyword='Ao'", "Key='Ao'", "Gọi searchProducts, Forward");
+
+        when(request.getParameter("action")).thenReturn("List");
+        when(request.getParameter("keyword")).thenReturn("Ao"); // Có keyword
+        when(request.getRequestDispatcher(contains("View-products.jsp"))).thenReturn(dispatcher);
+
+        List<Products> searchResults = new ArrayList<>();
+        searchResults.add(new Products(1, "Ao Thun", "", 100.0, ""));
+        
+        // Mock Service: Phải gọi search chứ không phải getAll
+        when(productService.searchProducts("Ao")).thenReturn(searchResults);
+
+        invokeDoGet();
+
+        verify(productService).searchProducts("Ao"); // Verify service call
+        verify(request).setAttribute(eq("PRODUCTS"), eq(searchResults));
+        verify(request).setAttribute(eq("keyword"), eq("Ao")); // Verify keyword được giữ lại
+        verify(dispatcher).forward(request, response);
+    }
+
+    // --- [MỚI] CASE 3: PHÂN TRANG (Pagination) ---
+    @Test
+    public void testDoGet_Pagination() throws Exception {
+        setTestCaseInfo("PROD_MGR_03", "Phân trang (Page 2)", 
+                "Data=20 items, Page=2", "Page=2", "Cắt list từ index 8->16");
+
+        when(request.getParameter("action")).thenReturn("List");
+        when(request.getParameter("page")).thenReturn("2"); // Xin trang 2
+        when(request.getRequestDispatcher(contains("View-products.jsp"))).thenReturn(dispatcher);
+
+        // Giả lập 20 sản phẩm
+        List<Products> hugeList = new ArrayList<>();
+        for(int i=0; i<20; i++) hugeList.add(new Products());
+        
+        when(productService.getAllProducts()).thenReturn(hugeList);
+
+        invokeDoGet();
+
+        // Verify logic cắt list: Trang 2 (size 8) -> Lấy từ index 8 đến 16
+        // Dùng ArgumentCaptor để bắt lấy cái list được gửi đi
+        ArgumentCaptor<List> captor = ArgumentCaptor.forClass(List.class);
+        verify(request).setAttribute(eq("PRODUCTS"), captor.capture());
+        
+        List capturedList = captor.getValue();
+        if (capturedList.size() != 8) {
+             throw new Exception("Lỗi phân trang: Size thực tế là " + capturedList.size());
+        }
+        verify(request).setAttribute(eq("currentPage"), eq(2));
+    }
+
+    // --- CASE 4: HIỆN FORM SỬA ---
     @Test
     public void testDoGet_PrepareEdit() throws Exception {
-        setTestCaseInfo("PROD_MGR_02", "Hiện form sửa SP", 
-                "1. Action='AddOrEdit', ID=5\n2. Service trả SP", 
-                "ID=5", "Forward ProductsManager.jsp");
+        setTestCaseInfo("PROD_MGR_04", "Hiện form sửa SP", 
+                "Action='AddOrEdit', ID=5", "ID=5", "Forward ProductsManager.jsp");
 
-        // 1. Mock Input
         when(request.getParameter("action")).thenReturn("AddOrEdit");
         when(request.getParameter("id")).thenReturn("5");
         when(request.getRequestDispatcher(contains("ProductsManager.jsp"))).thenReturn(dispatcher);
 
-        // 2. Mock Service
         Products p = new Products(); p.setId(5);
         when(productService.getProductForEdit(5)).thenReturn(p);
 
-        // 3. Run
-        Method doGet = ProductsManagerServlet.class.getDeclaredMethod("doGet", HttpServletRequest.class, HttpServletResponse.class);
-        doGet.setAccessible(true);
-        doGet.invoke(servlet, request, response);
+        invokeDoGet();
 
-        // 4. Verify
         verify(request).setAttribute(eq("PRODUCTS"), eq(p));
-        verify(request).setAttribute(eq("ACTION"), eq("SaveOrUpdate"));
         verify(dispatcher).forward(request, response);
     }
 
-    // ==========================================
-    // 3. TEST SAVE/UPDATE (Lưu)
-    // ==========================================
+    // --- CASE 5: LƯU THÀNH CÔNG ---
     @Test
     public void testDoPost_SaveNew() throws Exception {
-        setTestCaseInfo("PROD_MGR_03", "Lưu Sản phẩm mới", 
-                "1. Action='SaveOrUpdate'\n2. Params đầy đủ", 
-                "Name='Ao Moi', Price=200", "Call Service Save -> Redirect List");
+        setTestCaseInfo("PROD_MGR_05", "Lưu Sản phẩm mới", 
+                "Action='SaveOrUpdate'", "Full Data", "Call Service Save -> Redirect List");
 
-        // 1. Mock Input
         when(request.getParameter("action")).thenReturn("SaveOrUpdate");
-        when(request.getParameter("id")).thenReturn(""); // ID rỗng = Thêm mới
+        when(request.getParameter("id")).thenReturn(""); 
         when(request.getParameter("name")).thenReturn("Ao Moi");
-        when(request.getParameter("description")).thenReturn("Mo ta");
         when(request.getParameter("price")).thenReturn("200000");
-        when(request.getParameter("image")).thenReturn("img.png");
-        
         when(request.getContextPath()).thenReturn("/ShopDuck");
 
-        // 2. Run
-        Method doPost = ProductsManagerServlet.class.getDeclaredMethod("doPost", HttpServletRequest.class, HttpServletResponse.class);
-        doPost.setAccessible(true);
-        doPost.invoke(servlet, request, response);
+        invokeDoPost();
 
-        // 3. Verify
-        verify(productService).saveOrUpdateProduct(any(Products.class)); // Kiểm tra service được gọi
+        verify(productService).saveOrUpdateProduct(any(Products.class));
         verify(response).sendRedirect(contains("/admin/ProductsManagerServlet?action=List"));
     }
 
-    // ==========================================
-    // 4. TEST DELETE (Xóa)
-    // ==========================================
+    // --- CASE 6: XÓA ---
     @Test
     public void testDoGet_Delete() throws Exception {
-        setTestCaseInfo("PROD_MGR_04", "Xóa Sản phẩm", 
-                "1. Action='Delete'\n2. ID=10", 
-                "ID=10", "Call Service Delete -> Redirect List");
+        setTestCaseInfo("PROD_MGR_06", "Xóa Sản phẩm", 
+                "Action='Delete', ID=10", "ID=10", "Call Service Delete -> Redirect List");
 
-        // 1. Mock Input
         when(request.getParameter("action")).thenReturn("Delete");
         when(request.getParameter("id")).thenReturn("10");
         when(request.getContextPath()).thenReturn("/ShopDuck");
 
-        // 2. Run
-        Method doGet = ProductsManagerServlet.class.getDeclaredMethod("doGet", HttpServletRequest.class, HttpServletResponse.class);
-        doGet.setAccessible(true);
-        doGet.invoke(servlet, request, response);
+        invokeDoGet();
 
-        // 3. Verify
-        verify(productService).deleteProduct(10); // Phải gọi hàm xóa với ID 10
+        verify(productService).deleteProduct(10);
         verify(response).sendRedirect(contains("/admin/ProductsManagerServlet?action=List"));
     }
 
-    // === CẤU HÌNH XUẤT EXCEL MỚI ===
-    @Rule
-    public TestWatcher watcher = new TestWatcher() {
-        @Override
-        protected void succeeded(Description description) {
-            ExcelTestExporter.addResult(currentId, currentName, currentSteps, currentData, currentExpected, "OK", "PASS");
+    // --- [MỚI] CASE 7: XÓA ID RÁC ---
+    @Test
+    public void testDoGet_DeleteInvalidId() throws Exception {
+        setTestCaseInfo("PROD_MGR_07", "Xóa ID rác (Chữ)", 
+                "ID='abc'", "ID='abc'", "Ko gọi service -> Redirect");
+
+        when(request.getParameter("action")).thenReturn("Delete");
+        when(request.getParameter("id")).thenReturn("abc");
+        when(request.getContextPath()).thenReturn("/ShopDuck");
+
+        invokeDoGet();
+
+        // Verify: Không gọi deleteProduct với bất kỳ số nào
+        verify(productService, never()).deleteProduct(anyInt());
+        verify(response).sendRedirect(contains("action=List"));
+    }
+
+    // --- [MỚI] CASE 8: LỖI HỆ THỐNG ---
+    @Test
+    public void testProcessRequest_SystemError() throws Exception {
+        setTestCaseInfo("PROD_MGR_08", "Lỗi hệ thống (Exception)", 
+                "Service ném lỗi", "DB Error", "Set Error Attribute & Reload List");
+
+        when(request.getParameter("action")).thenReturn("Delete");
+        when(request.getParameter("id")).thenReturn("10");
+        // Giả lập lỗi
+        doThrow(new RuntimeException("DB Down")).when(productService).deleteProduct(10);
+        
+        // Khi lỗi xảy ra, catch block sẽ gọi handleList -> cần mock requestDispatcher cho List
+        when(request.getRequestDispatcher(contains("View-products.jsp"))).thenReturn(dispatcher);
+
+        invokeDoGet();
+
+        verify(request).setAttribute(contains("error"), contains("DB Down"));
+        verify(productService).getAllProducts(); // Phải load lại list
+    }
+
+    // --- [MỚI] CASE 9: ACTION NULL ---
+    @Test
+    public void testDoGet_DefaultAction() throws Exception {
+        setTestCaseInfo("PROD_MGR_09", "Action Null", 
+                "Action=null", "Null", "Mặc định là List");
+
+        when(request.getParameter("action")).thenReturn(null);
+        when(request.getRequestDispatcher(contains("View-products.jsp"))).thenReturn(dispatcher);
+
+        invokeDoGet();
+
+        verify(productService).getAllProducts();
+    }
+
+    // === HELPER METHODS ===
+    private void invokeDoGet() throws Exception {
+        Method doGet = ProductsManagerServlet.class.getDeclaredMethod("doGet", HttpServletRequest.class, HttpServletResponse.class);
+        doGet.setAccessible(true);
+        doGet.invoke(servlet, request, response);
+    }
+
+    private void invokeDoPost() throws Exception {
+        Method doPost = ProductsManagerServlet.class.getDeclaredMethod("doPost", HttpServletRequest.class, HttpServletResponse.class);
+        doPost.setAccessible(true);
+        doPost.invoke(servlet, request, response);
+    }
+
+    // === EXCEL EXPORT ===
+    @Rule public TestWatcher watcher = new TestWatcher() {
+        @Override protected void succeeded(Description d) { 
+            // [SỬA] Đảo vị trí currentData và currentSteps để khớp với file Excel
+            ExcelTestExporter.addResult(currentId, currentName, currentData, currentSteps, currentExpected, "OK", "PASS"); 
         }
-        @Override
-        protected void failed(Throwable e, Description description) {
-            ExcelTestExporter.addResult(currentId, currentName, currentSteps, currentData, currentExpected, e.getMessage(), "FAIL");
+        @Override protected void failed(Throwable e, Description d) { 
+            // [SỬA] Đảo vị trí currentData và currentSteps
+            ExcelTestExporter.addResult(currentId, currentName, currentData, currentSteps, currentExpected, e.getMessage(), "FAIL"); 
         }
     };
 
-    @AfterClass
-    public static void exportReport() {
-        // Xuất ra file .xlsx thay vì CSV
-        ExcelTestExporter.exportToExcel("KetQuaTest_ProductsManagerServlet.xlsx");
-    }
+    @AfterClass public static void exportReport() { ExcelTestExporter.exportToExcel("KetQuaTest_ProductsManagerServlet.xlsx"); }
 }

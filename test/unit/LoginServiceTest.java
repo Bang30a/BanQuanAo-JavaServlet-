@@ -84,7 +84,11 @@ public class LoginServiceTest {
         );
 
         // Giả lập: DAO trả về null khi gọi login
-        Mockito.when(usersDao.login("wrongUser", "123")).thenReturn(null);
+        try {
+            Mockito.when(usersDao.login("wrongUser", "123")).thenReturn(null);
+        } catch (Exception e) {
+            fail("Mock setup failed");
+        }
 
         LoginResult result = loginService.login("wrongUser", "123");
         
@@ -105,7 +109,11 @@ public class LoginServiceTest {
         Users adminUser = new Users(1, "admin", "123", "Admin Name", "admin@mail.com", "admin");
         
         // Mock hành vi
-        Mockito.when(usersDao.login("admin", "123")).thenReturn(adminUser);
+        try {
+            Mockito.when(usersDao.login("admin", "123")).thenReturn(adminUser);
+        } catch (Exception e) {
+            fail("Mock setup failed");
+        }
 
         // Thực thi
         LoginResult result = loginService.login("admin", "123");
@@ -127,7 +135,11 @@ public class LoginServiceTest {
         );
 
         Users normalUser = new Users(2, "user1", "123", "User Name", "user@mail.com", "user");
-        Mockito.when(usersDao.login("user1", "123")).thenReturn(normalUser);
+        try {
+            Mockito.when(usersDao.login("user1", "123")).thenReturn(normalUser);
+        } catch (Exception e) {
+            fail("Mock setup failed");
+        }
 
         LoginResult result = loginService.login("user1", "123");
 
@@ -145,31 +157,54 @@ public class LoginServiceTest {
         );
 
         Users hacker = new Users(3, "hacker", "123", "Hacker", "hacker@mail.com", "hacker_role");
-        Mockito.when(usersDao.login("hacker", "123")).thenReturn(hacker);
+        try {
+            Mockito.when(usersDao.login("hacker", "123")).thenReturn(hacker);
+        } catch (Exception e) {
+            fail("Mock setup failed");
+        }
 
         LoginResult result = loginService.login("hacker", "123");
 
         assertEquals(LoginResult.Status.FAILED_INVALID_ROLE, result.getStatus());
     }
 
-    // ==========================================================
-    // === CẤU HÌNH XUẤT EXCEL (DÙNG CLASS TIỆN ÍCH) ===
-    // ==========================================================
+    // --- [MỚI] TEST CASE: DAO NÉM EXCEPTION (SYSTEM ERROR) ---
+    @Test
+    public void testLogin_SystemError_ShouldFail() {
+        setTestCaseInfo(
+            "AUTH_06", 
+            "Lỗi hệ thống (Database Error)", 
+            "1. Mock DAO ném Exception\n2. Service catch và trả về lỗi hệ thống", 
+            "User: any, Pass: any", 
+            "Trạng thái: FAILED_SYSTEM_ERROR"
+        );
 
-    @Rule
-    public TestWatcher watcher = new TestWatcher() {
-        @Override
-        protected void succeeded(Description description) {
-            // Gọi Utility Class để thêm kết quả PASS
-            ExcelTestExporter.addResult(currentId, currentName, currentSteps, currentData, currentExpected, "OK", "PASS");
+        try {
+            // Giả lập DAO ném ra một RuntimeException hoặc Exception bất kỳ
+            Mockito.when(usersDao.login("errorUser", "123"))
+                   .thenThrow(new RuntimeException("DB Connection Failed"));
+        } catch (Exception e) {
+            fail("Mock setup failed");
         }
 
-        @Override
-        protected void failed(Throwable e, Description description) {
-            // Gọi Utility Class để thêm kết quả FAIL
-            ExcelTestExporter.addResult(currentId, currentName, currentSteps, currentData, currentExpected, e.getMessage(), "FAIL");
+        LoginResult result = loginService.login("errorUser", "123");
+
+        assertEquals(LoginResult.Status.FAILED_SYSTEM_ERROR, result.getStatus());
+        assertNull(result.getUser());
+    }
+
+     // === EXCEL EXPORT ===
+    @Rule public TestWatcher watcher = new TestWatcher() {
+        @Override protected void succeeded(Description d) { 
+            // [SỬA] Đảo vị trí currentData và currentSteps để khớp với file Excel
+            ExcelTestExporter.addResult(currentId, currentName, currentData, currentSteps, currentExpected, "OK", "PASS"); 
+        }
+        @Override protected void failed(Throwable e, Description d) { 
+            // [SỬA] Đảo vị trí currentData và currentSteps
+            ExcelTestExporter.addResult(currentId, currentName, currentData, currentSteps, currentExpected, e.getMessage(), "FAIL"); 
         }
     };
+
 
     @AfterClass
     public static void exportReport() {

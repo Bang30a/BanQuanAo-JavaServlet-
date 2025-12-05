@@ -16,10 +16,21 @@ import java.util.Map;
 @WebServlet("/admin/export-excel")
 public class ExportExcelServlet extends HttpServlet {
 
+    private DashboardDao dao;
+
+    // [MỚI] Setter Inject
+    public void setDao(DashboardDao dao) {
+        this.dao = dao;
+    }
+
+    private DashboardDao getDao() {
+        if (dao == null) dao = new DashboardDao();
+        return dao;
+    }
+
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        // 1. Lấy ngày từ request (hoặc mặc định là tháng hiện tại)
         String startDate = request.getParameter("startDate");
         String endDate = request.getParameter("endDate");
 
@@ -28,31 +39,28 @@ public class ExportExcelServlet extends HttpServlet {
             endDate = LocalDate.now().toString();
         }
 
-        // 2. Lấy dữ liệu từ DAO
-        DashboardDao dao = new DashboardDao();
-        double revenue = dao.getRevenueByDate(startDate, endDate);
-        int orders = dao.getOrderCountByDate(startDate, endDate);
-        // Lấy top sản phẩm (bạn có thể viết thêm hàm getTopSellingProductsByDate nếu cần lọc kỹ hơn)
-        List<Map<String, Object>> topProducts = dao.getTopSellingProducts(10); 
+        // [SỬA] Dùng getDao()
+        DashboardDao dashboardDao = getDao();
+        
+        double revenue = dashboardDao.getRevenueByDate(startDate, endDate);
+        int orders = dashboardDao.getOrderCountByDate(startDate, endDate);
+        List<Map<String, Object>> topProducts = dashboardDao.getTopSellingProducts(10); 
 
         // 3. Tạo file Excel
         try (Workbook workbook = new XSSFWorkbook()) {
             Sheet sheet = workbook.createSheet("Thống kê");
 
-            // Style cho header
             CellStyle headerStyle = workbook.createCellStyle();
             Font font = workbook.createFont();
             font.setBold(true);
             headerStyle.setFont(font);
 
-            // Dòng tiêu đề
             Row row0 = sheet.createRow(0);
             row0.createCell(0).setCellValue("BÁO CÁO THỐNG KÊ DOANH THU");
             
             Row row1 = sheet.createRow(1);
             row1.createCell(0).setCellValue("Từ ngày: " + startDate + " - Đến ngày: " + endDate);
 
-            // Dữ liệu tổng quan
             Row row3 = sheet.createRow(3);
             row3.createCell(0).setCellValue("Tổng Doanh Thu");
             row3.createCell(1).setCellValue("Tổng Đơn Hàng");
@@ -63,7 +71,6 @@ public class ExportExcelServlet extends HttpServlet {
             row4.createCell(0).setCellValue(revenue);
             row4.createCell(1).setCellValue(orders);
 
-            // Dữ liệu Top sản phẩm
             Row row6 = sheet.createRow(6);
             row6.createCell(0).setCellValue("TOP SẢN PHẨM BÁN CHẠY");
             row6.getCell(0).setCellStyle(headerStyle);
@@ -77,15 +84,17 @@ public class ExportExcelServlet extends HttpServlet {
             int rowNum = 8;
             for (Map<String, Object> p : topProducts) {
                 Row r = sheet.createRow(rowNum++);
-                r.createCell(0).setCellValue((String) p.get("name"));
-                r.createCell(1).setCellValue((Integer) p.get("total_sold"));
+                // Check null safety
+                String pName = p.get("name") != null ? p.get("name").toString() : "";
+                Integer pSold = p.get("total_sold") != null ? (Integer)p.get("total_sold") : 0;
+                
+                r.createCell(0).setCellValue(pName);
+                r.createCell(1).setCellValue(pSold);
             }
 
-            // Auto size cột
             sheet.autoSizeColumn(0);
             sheet.autoSizeColumn(1);
 
-            // 4. Trả file về trình duyệt
             response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
             response.setHeader("Content-Disposition", "attachment; filename=BaoCao_" + startDate + "_" + endDate + ".xlsx");
 

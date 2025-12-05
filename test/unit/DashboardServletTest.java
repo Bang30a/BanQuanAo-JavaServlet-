@@ -2,31 +2,28 @@ package unit;
 
 import control.admin.DashboardServlet;
 import dao.DashboardDao;
+import util.ExcelTestExporter;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
+import static org.mockito.ArgumentMatchers.contains;
+import static org.mockito.Mockito.*;
 
 import javax.servlet.RequestDispatcher;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import util.ExcelTestExporter;
 import org.junit.AfterClass;
 import org.junit.Rule;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
-
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
 public class DashboardServletTest {
@@ -39,46 +36,21 @@ public class DashboardServletTest {
     @Mock private DashboardDao dashboardDao; // Mock DAO
 
     // === CẤU HÌNH BÁO CÁO ===
-    private String currentId = "";
-    private String currentName = "";
-    private String currentSteps = "";
-    private static String currentData = "";
-    private static String currentExpected = "";
+    private String currentId = "", currentName = "", currentSteps = "", currentData = "", currentExpected = "";
 
     private void setTestCaseInfo(String id, String name, String steps, String data, String expected) {
-        this.currentId = id;
-        this.currentName = name;
-        this.currentSteps = steps;
-        this.currentData = data;
-        this.currentExpected = expected;
+        this.currentId = id; this.currentName = name; this.currentSteps = steps; 
+        this.currentData = data; this.currentExpected = expected;
     }
 
     @Before
     public void setUp() throws Exception {
         servlet = new DashboardServlet();
-        
-        // Inject Mock DAO vào Servlet (cần sửa Servlet hoặc dùng Reflection nếu Servlet tự new DAO)
-        // Ở đây giả định bạn dùng Reflection để set field private 'dao' trong DashboardServlet
-        // Nếu trong DashboardServlet bạn khai báo: DashboardDao dao = new DashboardDao(); trong doGet
-        // thì KHÔNG THỂ mock được bằng cách thông thường.
-        // Bạn CẦN sửa DashboardServlet đưa biến dao ra ngoài làm thuộc tính class (private DashboardDao dao;) 
-        // và khởi tạo trong init() hoặc constructor, hoặc dùng setter.
-        
-        // Giả sử bạn đã sửa DashboardServlet như sau:
-        // public class DashboardServlet extends HttpServlet {
-        //     private DashboardDao dao = new DashboardDao(); // Có thể set lại bằng Reflection
-        //     ...
-        
-        try {
-            Field daoField = DashboardServlet.class.getDeclaredField("dao"); // Tên biến trong Servlet phải là 'dao'
-            daoField.setAccessible(true);
-            daoField.set(servlet, dashboardDao);
-        } catch (NoSuchFieldException e) {
-            // Nếu chưa sửa Servlet, test này có thể fail ở bước verify DAO
-            System.out.println("LƯU Ý: Cần đưa biến 'DashboardDao dao' ra làm thuộc tính class trong DashboardServlet để test.");
-        }
+        // [MỚI] Sử dụng setter để inject Mock DAO (đơn giản hơn Reflection)
+        servlet.setDao(dashboardDao);
     }
 
+    // --- CASE 1: LOAD DASHBOARD THÀNH CÔNG ---
     @Test
     public void testDoGet_LoadDashboardSuccess() throws Exception {
         setTestCaseInfo("DASH_SERV_01", "Load trang Dashboard thành công", 
@@ -100,7 +72,7 @@ public class DashboardServletTest {
         when(dashboardDao.getOrderStatusStats()).thenReturn(statusChart);
 
         // 2. Mock Request
-        when(request.getRequestDispatcher("/admin/dashboard/Dashboard.jsp")).thenReturn(dispatcher);
+        when(request.getRequestDispatcher(contains("Dashboard.jsp"))).thenReturn(dispatcher);
 
         // 3. Run doGet (dùng Reflection vì protected)
         Method doGet = DashboardServlet.class.getDeclaredMethod("doGet", HttpServletRequest.class, HttpServletResponse.class);
@@ -118,16 +90,33 @@ public class DashboardServletTest {
         verify(dispatcher).forward(request, response);
     }
 
-    // === XUẤT EXCEL ===
-    @Rule
-    public TestWatcher watcher = new TestWatcher() {
-        @Override
-        protected void succeeded(Description description) {
-            ExcelTestExporter.addResult(currentId, currentName, currentSteps, currentData, currentExpected, "OK", "PASS");
+    // --- [MỚI] CASE 2: LỖI HỆ THỐNG (EXCEPTION) ---
+    @Test
+    public void testDoGet_SystemError() throws Exception {
+        setTestCaseInfo("DASH_SERV_02", "Lỗi hệ thống (Exception)", 
+                "DAO ném lỗi RuntimeException", "Error", "Log Error & Forward JSP (Safe Mode)");
+
+        // Giả lập lỗi DB
+        when(dashboardDao.getTotalRevenue()).thenThrow(new RuntimeException("DB Connection Failed"));
+        when(request.getRequestDispatcher(contains("Dashboard.jsp"))).thenReturn(dispatcher);
+
+        Method doGet = DashboardServlet.class.getDeclaredMethod("doGet", HttpServletRequest.class, HttpServletResponse.class);
+        doGet.setAccessible(true);
+        doGet.invoke(servlet, request, response);
+
+        // Verify: Vẫn forward về trang dashboard (không chết trang)
+        verify(dispatcher).forward(request, response);
+    }
+
+    // === EXCEL EXPORT ===
+    @Rule public TestWatcher watcher = new TestWatcher() {
+        @Override protected void succeeded(Description d) { 
+            // [SỬA] Đảo vị trí currentData và currentSteps để khớp với file Excel
+            ExcelTestExporter.addResult(currentId, currentName, currentData, currentSteps, currentExpected, "OK", "PASS"); 
         }
-        @Override
-        protected void failed(Throwable e, Description description) {
-            ExcelTestExporter.addResult(currentId, currentName, currentSteps, currentData, currentExpected, e.getMessage(), "FAIL");
+        @Override protected void failed(Throwable e, Description d) { 
+            // [SỬA] Đảo vị trí currentData và currentSteps
+            ExcelTestExporter.addResult(currentId, currentName, currentData, currentSteps, currentExpected, e.getMessage(), "FAIL"); 
         }
     };
 

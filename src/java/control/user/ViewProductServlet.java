@@ -26,8 +26,14 @@ public class ViewProductServlet extends HttpServlet {
         this.productService = new ProductService(productDao, variantDao, sizeDao);
     }
 
+    // [THÊM MỚI] Setter để Inject Mock Service khi test
+    public void setProductService(ProductService productService) {
+        this.productService = productService;
+    }
+
     @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+    // [SỬA] Đổi protected -> public để Test gọi được
+    public void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         
         request.setCharacterEncoding("UTF-8");
@@ -35,25 +41,34 @@ public class ViewProductServlet extends HttpServlet {
         try {
             // 1. Lấy dữ liệu sản phẩm
             List<Products> allProducts = productService.getAllProducts();
-            List<Products> productList = allProducts.size() > 8 ? allProducts.subList(0, 8) : allProducts;
+            // Logic: Cắt 8 sản phẩm đầu
+            List<Products> productList = (allProducts != null && allProducts.size() > 8) 
+                                       ? allProducts.subList(0, 8) 
+                                       : allProducts;
 
             List<Products> allShirts = productService.searchProducts("áo");
-            List<Products> shirtList = allShirts.size() > 4 ? allShirts.subList(0, 4) : allShirts;
+            // Logic: Cắt 4 áo đầu
+            List<Products> shirtList = (allShirts != null && allShirts.size() > 4) 
+                                     ? allShirts.subList(0, 4) 
+                                     : allShirts;
 
             List<Products> allPants = productService.searchProducts("quần");
-            List<Products> pantsList = allPants.size() > 4 ? allPants.subList(0, 4) : allPants;
+            // Logic: Cắt 4 quần đầu
+            List<Products> pantsList = (allPants != null && allPants.size() > 4) 
+                                     ? allPants.subList(0, 4) 
+                                     : allPants;
 
             // 2. Gửi dữ liệu sang JSP
             request.setAttribute("productList", productList);
             request.setAttribute("shirtList", shirtList);
             request.setAttribute("pantsList", pantsList);
 
-            // [SỬA LẠI] Forward về đúng file JSP trong thư mục user/product/
+            // Forward về đúng file JSP
             request.getRequestDispatcher("/user/product/View-products.jsp").forward(request, response);
 
         } catch (Exception e) {
             e.printStackTrace();
-            // Nếu lỗi, vẫn forward về trang này (có thể hiện trống hoặc lỗi)
+            // Nếu lỗi, vẫn forward về trang này
             request.getRequestDispatcher("/user/product/View-products.jsp").forward(request, response);
         }
     }

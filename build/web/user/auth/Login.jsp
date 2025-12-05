@@ -8,12 +8,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Đăng nhập - ShopDuck</title>
 
-    <!-- 1. BOOTSTRAP 5 & FONT (Đồng bộ với toàn trang) -->
+    <!-- 1. BOOTSTRAP 5 & FONT -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     
-    <!-- Link CSS riêng (nếu có) -->
     <link rel="stylesheet" href="${pageContext.request.contextPath}/user/assets/css/style.css">
 
     <style>
@@ -26,7 +25,7 @@
         }
 
         main {
-            flex: 1; /* Đẩy footer xuống đáy */
+            flex: 1;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -121,13 +120,22 @@
             <h3 class="login-title">Chào mừng trở lại!</h3>
             <p class="login-subtitle">Vui lòng đăng nhập để tiếp tục</p>
 
-            <!-- Thông báo lỗi (JSTL) -->
+            <!-- [MỚI] THÔNG BÁO ĐĂNG KÝ THÀNH CÔNG -->
+            <c:if test="${not empty sessionScope.registerSuccess}">
+                <div class="alert alert-success alert-custom mb-4" role="alert">
+                    <i class="bi bi-check-circle-fill"></i>
+                    ${sessionScope.registerSuccess}
+                </div>
+                <!-- Xóa session để không hiện lại khi F5 -->
+                <c:remove var="registerSuccess" scope="session" />
+            </c:if>
+
+            <!-- Thông báo lỗi Đăng nhập -->
             <c:if test="${not empty sessionScope.loginError}">
                 <div class="alert alert-danger alert-custom mb-4" role="alert">
                     <i class="bi bi-exclamation-triangle-fill"></i>
                     ${sessionScope.loginError}
                 </div>
-                <!-- Xóa session error sau khi hiện (Cần xử lý trong Servlet, hoặc dùng JSTL remove nếu server hỗ trợ) -->
                 <c:remove var="loginError" scope="session" />
             </c:if>
 

@@ -6,7 +6,7 @@ import entity.Users;
 import util.ExcelTestExporter;
 
 // === IMPORT REFLECTION ===
-import java.lang.reflect.Method; // <--- Chìa khóa vạn năng
+import java.lang.reflect.Method; 
 
 import javax.servlet.RequestDispatcher;
 import javax.servlet.http.HttpServletRequest;
@@ -60,31 +60,36 @@ public class CheckoutServletTest {
     }
 
     // === HÀM HỖ TRỢ: GỌI PROTECTED METHOD ===
-    // Đây là "chìa khóa" giúp bạn gọi hàm doGet đang bị khóa (protected)
     private void invokeDoGet(HttpServletRequest req, HttpServletResponse resp) throws Exception {
-        // 1. Lấy thông tin hàm doGet từ class Servlet
         Method doGetMethod = CheckoutServlet.class.getDeclaredMethod("doGet", HttpServletRequest.class, HttpServletResponse.class);
-        
-        // 2. Mở khóa (Cho phép truy cập dù là protected/private)
         doGetMethod.setAccessible(true);
-        
-        // 3. Thực thi hàm
         doGetMethod.invoke(servlet, req, resp);
+    }
+
+    // [MỚI] HÀM HỖ TRỢ: GỌI PROTECTED doPost
+    private void invokeDoPost(HttpServletRequest req, HttpServletResponse resp) throws Exception {
+        Method doPostMethod = CheckoutServlet.class.getDeclaredMethod("doPost", HttpServletRequest.class, HttpServletResponse.class);
+        doPostMethod.setAccessible(true);
+        doPostMethod.invoke(servlet, req, resp);
     }
 
     // TEST 1: Chưa đăng nhập
     @Test
     public void testDoGet_NotLoggedIn() throws Exception {
         setTestCaseInfo("CHECKOUT_01", "Chưa đăng nhập", 
-                "User=null -> gọi doGet()", "User=null", "Redirect Login");
+                "User=null -> gọi doGet()", "User=null", "Lưu RedirectUrl & Chuyển Login");
 
         when(session.getAttribute("user")).thenReturn(null);
-        when(request.getRequestURI()).thenReturn("/checkout");
+        // Giả lập request URI hiện tại để test logic lưu trang cũ
+        when(request.getRequestURI()).thenReturn("/user/checkout"); 
 
-        // THAY VÌ GỌI: servlet.doGet(...) -> GỌI QUA REFLECTION
         invokeDoGet(request, response);
 
+        // Verify: Phải set thông báo lỗi
         verify(session).setAttribute(eq("loginError"), anyString());
+        // [MỚI] Verify: Phải lưu lại URL trang hiện tại để login xong quay lại
+        verify(session).setAttribute(eq("redirectAfterLogin"), eq("/user/checkout"));
+        // Verify: Redirect
         verify(response).sendRedirect(contains("/user/auth/Login.jsp"));
     }
 
@@ -97,7 +102,6 @@ public class CheckoutServletTest {
         when(session.getAttribute("user")).thenReturn(new Users());
         when(session.getAttribute("cart")).thenReturn(null);
 
-        // GỌI QUA REFLECTION
         invokeDoGet(request, response);
 
         verify(response).sendRedirect(contains("/user/order/view-cart.jsp"));
@@ -113,16 +117,15 @@ public class CheckoutServletTest {
         when(session.getAttribute("user")).thenReturn(new Users());
         when(session.getAttribute("cart")).thenReturn(emptyCart);
 
-        // GỌI QUA REFLECTION
         invokeDoGet(request, response);
 
         verify(response).sendRedirect(contains("/user/order/view-cart.jsp"));
     }
 
-    // TEST 4: Success
+    // TEST 4: Success (doGet)
     @Test
     public void testDoGet_Success() throws Exception {
-        setTestCaseInfo("CHECKOUT_04", "Vào trang Checkout", 
+        setTestCaseInfo("CHECKOUT_04", "Vào trang Checkout (GET)", 
                 "User ok, Cart ok", "User, Cart(1)", "Forward Checkout.jsp");
 
         when(session.getAttribute("user")).thenReturn(new Users());
@@ -131,23 +134,41 @@ public class CheckoutServletTest {
         when(session.getAttribute("cart")).thenReturn(validCart);
         when(request.getRequestDispatcher(anyString())).thenReturn(dispatcher);
 
-        // GỌI QUA REFLECTION
         invokeDoGet(request, response);
 
         verify(request).getRequestDispatcher(contains("Checkout.jsp"));
         verify(dispatcher).forward(request, response);
     }
 
-    // === EXCEL REPORT ===
-    @Rule
-    public TestWatcher watcher = new TestWatcher() {
-        @Override
-        protected void succeeded(Description description) {
-            ExcelTestExporter.addResult(currentId, currentName, currentSteps, currentData, currentExpected, "OK", "PASS");
+    // [MỚI] TEST 5: Success (doPost)
+    // Kiểm tra xem doPost có gọi sang doGet đúng logic không
+    @Test
+    public void testDoPost_Success() throws Exception {
+        setTestCaseInfo("CHECKOUT_05", "Vào trang Checkout (POST)", 
+                "Gọi doPost -> Delegated to doGet", "User, Cart(1)", "Forward Checkout.jsp");
+
+        when(session.getAttribute("user")).thenReturn(new Users());
+        List<CartBean> validCart = new ArrayList<>();
+        validCart.add(new CartBean());
+        when(session.getAttribute("cart")).thenReturn(validCart);
+        when(request.getRequestDispatcher(anyString())).thenReturn(dispatcher);
+
+        // Gọi doPost thay vì doGet
+        invokeDoPost(request, response);
+
+        verify(request).getRequestDispatcher(contains("Checkout.jsp"));
+        verify(dispatcher).forward(request, response);
+    }
+
+    // === EXCEL EXPORT ===
+    @Rule public TestWatcher watcher = new TestWatcher() {
+        @Override protected void succeeded(Description d) { 
+            // [SỬA] Đảo vị trí currentData và currentSteps để khớp với file Excel
+            ExcelTestExporter.addResult(currentId, currentName, currentData, currentSteps, currentExpected, "OK", "PASS"); 
         }
-        @Override
-        protected void failed(Throwable e, Description description) {
-            ExcelTestExporter.addResult(currentId, currentName, currentSteps, currentData, currentExpected, e.getMessage(), "FAIL");
+        @Override protected void failed(Throwable e, Description d) { 
+            // [SỬA] Đảo vị trí currentData và currentSteps
+            ExcelTestExporter.addResult(currentId, currentName, currentData, currentSteps, currentExpected, e.getMessage(), "FAIL"); 
         }
     };
 

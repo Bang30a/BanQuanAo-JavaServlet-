@@ -32,7 +32,7 @@ public class CartBeanTest {
     }
 
     // ==========================================
-    // CÁC TEST CASE (Đã thêm thông tin báo cáo)
+    // CÁC TEST CASE
     // ==========================================
 
     // UT_01: Test Constructor với số lượng hợp lệ
@@ -66,47 +66,71 @@ public class CartBeanTest {
         Assert.assertEquals("Số lượng 0 phải tự về 1", 1, itemZero.getQuantity());
     }
 
-    // UT_03: Test Setter bảo vệ số lượng
+    // UT_03: Test Setter bảo vệ số lượng (Số 0)
     @Test
-    public void testSetQuantity_Protection() {
-        setTestCaseInfo("BEAN_03", "Setter: Bảo vệ số lượng", 
-                "setQuantity(10) rồi setQuantity(0)", "Set 10, Set 0", "Qty=10, Qty=1");
+    public void testSetQuantity_Zero() {
+        setTestCaseInfo("BEAN_03", "Setter: Nhập 0", 
+                "setQuantity(0)", "Input=0", "Qty=1");
 
         CartBean item = new CartBean();
+        item.setQuantity(10); // Gán trước
         
-        // Set số hợp lệ
-        item.setQuantity(10);
-        Assert.assertEquals(10, item.getQuantity());
-        
-        // Set số lỗi (số 0) -> Mong đợi nhảy về 1
-        item.setQuantity(0);
+        item.setQuantity(0); // Sửa thành 0
         Assert.assertEquals(1, item.getQuantity());
     }
 
-    // UT_04: Test tính tổng tiền (Happy Case)
+    // [MỚI] UT_04: Test Setter bảo vệ số lượng (Số Âm)
+    @Test
+    public void testSetQuantity_Negative() {
+        setTestCaseInfo("BEAN_04", "Setter: Nhập số âm", 
+                "setQuantity(-10)", "Input=-10", "Qty=1");
+
+        CartBean item = new CartBean();
+        item.setQuantity(5);
+        
+        item.setQuantity(-10); // Sửa thành âm
+        Assert.assertEquals(1, item.getQuantity());
+    }
+
+    // UT_05: Test tính tổng tiền (Số chẵn)
     @Test
     public void testGetTotalPrice_Normal() {
-        setTestCaseInfo("BEAN_04", "Tính tổng tiền: Bình thường", 
+        setTestCaseInfo("BEAN_05", "Tính tổng tiền: Bình thường", 
                 "Price=100k * Qty=2", "P=100k, Q=2", "Total=200k");
 
-        // 1. Giả lập sản phẩm
         ProductVariants p = new ProductVariants();
         p.setPrice(100000.0);
         
-        // 2. Tạo CartBean
         CartBean item = new CartBean(p, 2);
         
-        // 3. Tính toán
         double expected = 200000.0;
         double actual = item.getTotalPrice();
         
         Assert.assertEquals(expected, actual, 0.001);
     }
 
-    // UT_05: Test tính tổng tiền khi Product bị null
+    // [MỚI] UT_06: Test tính tổng tiền (Số lẻ/Thập phân)
+    @Test
+    public void testGetTotalPrice_Decimal() {
+        setTestCaseInfo("BEAN_06", "Tính tổng tiền: Số lẻ", 
+                "Price=10.5 * Qty=3", "P=10.5, Q=3", "Total=31.5");
+
+        ProductVariants p = new ProductVariants();
+        p.setPrice(10.5); // Giá lẻ
+        
+        CartBean item = new CartBean(p, 3);
+        
+        double expected = 31.5;
+        double actual = item.getTotalPrice();
+        
+        // Delta 0.001 dùng để so sánh số thực (double)
+        Assert.assertEquals(expected, actual, 0.001);
+    }
+
+    // UT_07: Test tính tổng tiền khi Product bị null
     @Test
     public void testGetTotalPrice_NullProduct() {
-        setTestCaseInfo("BEAN_05", "Tính tổng tiền: Product Null", 
+        setTestCaseInfo("BEAN_07", "Tính tổng tiền: Product Null", 
                 "CartBean chưa gán Product", "Product=null", "Total=0.0");
 
         CartBean item = new CartBean();
@@ -117,22 +141,34 @@ public class CartBeanTest {
         Assert.assertEquals(0.0, actual, 0.001);
     }
 
-    // ==========================================================
-    // === CẤU HÌNH XUẤT EXCEL (TEST WATCHER) ===
-    // ==========================================================
+    // [MỚI] UT_08: Test Getter/Setter Product
+    @Test
+    public void testProductGetterSetter() {
+        setTestCaseInfo("BEAN_08", "Getter/Setter Product", 
+                "Set P -> Get P", "Product Obj", "Obj not null");
 
-    @Rule
-    public TestWatcher watcher = new TestWatcher() {
-        @Override
-        protected void succeeded(Description description) {
-            ExcelTestExporter.addResult(currentId, currentName, currentSteps, currentData, currentExpected, "OK", "PASS");
+        CartBean item = new CartBean();
+        ProductVariants p = new ProductVariants();
+        p.setId(99);
+        
+        item.setProductVariant(p);
+        
+        Assert.assertNotNull(item.getProductVariant());
+        Assert.assertEquals(99, item.getProductVariant().getId());
+    }
+
+     // === EXCEL EXPORT ===
+    @Rule public TestWatcher watcher = new TestWatcher() {
+        @Override protected void succeeded(Description d) { 
+            // [SỬA] Đảo vị trí currentData và currentSteps để khớp với file Excel
+            ExcelTestExporter.addResult(currentId, currentName, currentData, currentSteps, currentExpected, "OK", "PASS"); 
         }
-
-        @Override
-        protected void failed(Throwable e, Description description) {
-            ExcelTestExporter.addResult(currentId, currentName, currentSteps, currentData, currentExpected, e.getMessage(), "FAIL");
+        @Override protected void failed(Throwable e, Description d) { 
+            // [SỬA] Đảo vị trí currentData và currentSteps
+            ExcelTestExporter.addResult(currentId, currentName, currentData, currentSteps, currentExpected, e.getMessage(), "FAIL"); 
         }
     };
+
 
     @AfterClass
     public static void exportReport() {

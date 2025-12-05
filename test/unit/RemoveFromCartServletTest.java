@@ -4,7 +4,7 @@ package unit;
 import control.user.RemoveFromCartServlet;
 import entity.CartBean;
 import service.CartService;
-import util.ExcelTestExporter; // <-- Import class tiện ích
+import util.ExcelTestExporter;
 
 // === IMPORT TEST & MOCKITO ===
 import org.junit.Before;
@@ -43,27 +43,18 @@ public class RemoveFromCartServletTest {
     @Mock private HttpSession session;
     @Mock private CartService cartService;
 
-    // === CẤU HÌNH BÁO CÁO (Biến instance) ===
-    private String currentId = "";
-    private String currentName = "";
-    private String currentSteps = "";
-    private String currentData = "";
-    private String currentExpected = "";
-    // Đã xóa list finalReportData
+    // === CẤU HÌNH BÁO CÁO ===
+    private String currentId = "", currentName = "", currentSteps = "", currentData = "", currentExpected = "";
 
     private void setTestCaseInfo(String id, String name, String steps, String data, String expected) {
-        this.currentId = id;
-        this.currentName = name;
-        this.currentSteps = steps;
-        this.currentData = data;
-        this.currentExpected = expected;
+        this.currentId = id; this.currentName = name; this.currentSteps = steps; 
+        this.currentData = data; this.currentExpected = expected;
     }
 
     @Before
     public void setUp() throws Exception {
         servlet = new RemoveFromCartServlet();
-
-        // Inject Mock Service vào Servlet bằng Reflection
+        // Inject Mock Service
         try {
             Field serviceField = RemoveFromCartServlet.class.getDeclaredField("cartService");
             serviceField.setAccessible(true);
@@ -73,55 +64,47 @@ public class RemoveFromCartServletTest {
         }
     }
 
+    // --- CASE 1: XÓA THÀNH CÔNG ---
     @Test
     public void testDoGet_RemoveSuccess() throws Exception {
         setTestCaseInfo("REMOVE_01", "Xóa thành công", 
                 "1. Session có Cart\n2. Index=0\n3. Call service remove", 
                 "Index=0", "Update Cart & Redirect");
 
-        // 1. Mock Session & Cart
-        List<CartBean> mockCart = new ArrayList<>(); // Giả lập giỏ có đồ
+        List<CartBean> mockCart = new ArrayList<>();
         mockCart.add(new CartBean()); 
         
         when(request.getSession()).thenReturn(session);
         when(session.getAttribute("cart")).thenReturn(mockCart);
-        when(request.getContextPath()).thenReturn("/ShopDuck"); // Mock context path cho redirect
+        when(request.getContextPath()).thenReturn("/ShopDuck");
 
-        // 2. Mock Input
         when(request.getParameter("index")).thenReturn("0");
 
-        // 3. Run doGet
-        Method doGet = RemoveFromCartServlet.class.getDeclaredMethod("doGet", HttpServletRequest.class, HttpServletResponse.class);
-        doGet.setAccessible(true);
-        doGet.invoke(servlet, request, response);
+        invokeDoGet();
 
-        // 4. Verify
-        verify(cartService).removeFromCart(eq(mockCart), eq(0)); // Phải gọi hàm xóa
-        verify(session).setAttribute(eq("cart"), eq(mockCart)); // Phải cập nhật session
-        verify(response).sendRedirect(contains("view-cart.jsp")); // Phải chuyển trang
+        verify(cartService).removeFromCart(eq(mockCart), eq(0)); 
+        verify(session).setAttribute(eq("cart"), eq(mockCart)); 
+        verify(response).sendRedirect(contains("view-cart.jsp"));
     }
 
+    // --- CASE 2: GIỎ HÀNG NULL ---
     @Test
     public void testDoGet_CartNull() throws Exception {
         setTestCaseInfo("REMOVE_02", "Xóa khi giỏ rỗng (Null)", 
                 "1. Session cart = null\n2. Index=0", 
                 "Cart=null", "Redirect ngay, ko gọi Service");
 
-        // 1. Mock Session returns NULL
         when(request.getSession()).thenReturn(session);
         when(session.getAttribute("cart")).thenReturn(null);
         when(request.getContextPath()).thenReturn("/ShopDuck");
 
-        // 2. Run
-        Method doGet = RemoveFromCartServlet.class.getDeclaredMethod("doGet", HttpServletRequest.class, HttpServletResponse.class);
-        doGet.setAccessible(true);
-        doGet.invoke(servlet, request, response);
+        invokeDoGet();
 
-        // 3. Verify
-        verify(cartService, never()).removeFromCart(any(), anyInt()); // Không được gọi service
+        verify(cartService, never()).removeFromCart(any(), anyInt());
         verify(response).sendRedirect(contains("view-cart.jsp"));
     }
 
+    // --- CASE 3: INDEX SAI ĐỊNH DẠNG (NumberFormat) ---
     @Test
     public void testDoGet_InvalidIndex_String() throws Exception {
         setTestCaseInfo("REMOVE_03", "Index lỗi (Chuỗi)", 
@@ -132,19 +115,15 @@ public class RemoveFromCartServletTest {
         when(session.getAttribute("cart")).thenReturn(new ArrayList<>());
         when(request.getContextPath()).thenReturn("/ShopDuck");
 
-        // Mock Input "Rác"
         when(request.getParameter("index")).thenReturn("abc");
 
-        // Run
-        Method doGet = RemoveFromCartServlet.class.getDeclaredMethod("doGet", HttpServletRequest.class, HttpServletResponse.class);
-        doGet.setAccessible(true);
-        doGet.invoke(servlet, request, response);
+        invokeDoGet();
 
-        // Verify: Servlet sẽ bắt lỗi NumberFormatException, nên service không được gọi
         verify(cartService, never()).removeFromCart(any(), anyInt());
         verify(response).sendRedirect(contains("view-cart.jsp"));
     }
 
+    // --- CASE 4: INDEX NULL ---
     @Test
     public void testDoGet_NullIndex() throws Exception {
         setTestCaseInfo("REMOVE_04", "Index Null", 
@@ -155,35 +134,56 @@ public class RemoveFromCartServletTest {
         when(session.getAttribute("cart")).thenReturn(new ArrayList<>());
         when(request.getContextPath()).thenReturn("/ShopDuck");
 
-        // Mock Input Null
         when(request.getParameter("index")).thenReturn(null);
 
-        // Run
-        Method doGet = RemoveFromCartServlet.class.getDeclaredMethod("doGet", HttpServletRequest.class, HttpServletResponse.class);
-        doGet.setAccessible(true);
-        doGet.invoke(servlet, request, response);
+        invokeDoGet();
 
-        // Verify
         verify(cartService, never()).removeFromCart(any(), anyInt());
         verify(response).sendRedirect(contains("view-cart.jsp"));
     }
 
-    // === XUẤT EXCEL MỚI ===
-    @Rule
-    public TestWatcher watcher = new TestWatcher() {
-        @Override
-        protected void succeeded(Description description) {
-            ExcelTestExporter.addResult(currentId, currentName, currentSteps, currentData, currentExpected, "OK", "PASS");
+    // --- [MỚI] CASE 5: LỖI SERVICE (Exception General) ---
+    @Test
+    public void testDoGet_ServiceException() throws Exception {
+        setTestCaseInfo("REMOVE_05", "Lỗi hệ thống (Exception)", 
+                "1. Service ném RuntimeException\n2. Servlet catch", 
+                "Index=1, Error", "Catch & Redirect an toàn");
+
+        List<CartBean> mockCart = new ArrayList<>();
+        when(request.getSession()).thenReturn(session);
+        when(session.getAttribute("cart")).thenReturn(mockCart);
+        when(request.getContextPath()).thenReturn("/ShopDuck");
+        
+        when(request.getParameter("index")).thenReturn("1");
+
+        // Giả lập Service bị lỗi (ví dụ index vượt quá size thật của list trong logic service)
+        doThrow(new RuntimeException("Index Out Of Bounds")).when(cartService).removeFromCart(anyList(), anyInt());
+
+        invokeDoGet();
+
+        // Verify: Servlet phải bắt lỗi và vẫn redirect về trang view-cart chứ không chết trang
+        verify(response).sendRedirect(contains("view-cart.jsp"));
+    }
+
+    // === HELPER ===
+    private void invokeDoGet() throws Exception {
+        Method doGet = RemoveFromCartServlet.class.getDeclaredMethod("doGet", HttpServletRequest.class, HttpServletResponse.class);
+        doGet.setAccessible(true);
+        doGet.invoke(servlet, request, response);
+    }
+
+    // === EXCEL EXPORT ===
+    @Rule public TestWatcher watcher = new TestWatcher() {
+        @Override protected void succeeded(Description d) { 
+            ExcelTestExporter.addResult(currentId, currentName, currentData, currentSteps, currentExpected, "OK", "PASS"); 
         }
-        @Override
-        protected void failed(Throwable e, Description description) {
-            ExcelTestExporter.addResult(currentId, currentName, currentSteps, currentData, currentExpected, e.getMessage(), "FAIL");
+        @Override protected void failed(Throwable e, Description d) { 
+            ExcelTestExporter.addResult(currentId, currentName, currentData, currentSteps, currentExpected, e.getMessage(), "FAIL"); 
         }
     };
 
     @AfterClass
     public static void exportReport() {
-        // Xuất ra file .xlsx
         ExcelTestExporter.exportToExcel("KetQuaTest_RemoveFromCart.xlsx");
     }
 }

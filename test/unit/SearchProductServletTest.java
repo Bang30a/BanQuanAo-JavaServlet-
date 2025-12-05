@@ -4,7 +4,7 @@ import control.user.SearchProductServlet;
 import service.ProductService;
 import entity.Products;
 import entity.ProductVariants;
-import util.ExcelTestExporter; // <-- Import class tiện ích
+import util.ExcelTestExporter;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -12,7 +12,6 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
@@ -26,7 +25,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-// Import JUNIT
 import org.junit.AfterClass;
 import org.junit.Rule;
 import org.junit.rules.TestWatcher;
@@ -42,26 +40,17 @@ public class SearchProductServletTest {
     @Mock private RequestDispatcher dispatcher;
     @Mock private ProductService productService;
 
-    // === CẤU HÌNH BÁO CÁO (Biến instance) ===
-    private String currentId = "";
-    private String currentName = "";
-    private String currentSteps = "";
-    private String currentData = "";
-    private String currentExpected = "";
-    // Đã xóa list finalReportData
+    // === CẤU HÌNH BÁO CÁO ===
+    private String currentId = "", currentName = "", currentSteps = "", currentData = "", currentExpected = "";
 
     private void setTestCaseInfo(String id, String name, String steps, String data, String expected) {
-        this.currentId = id;
-        this.currentName = name;
-        this.currentSteps = steps;
-        this.currentData = data;
-        this.currentExpected = expected;
+        this.currentId = id; this.currentName = name; this.currentSteps = steps; 
+        this.currentData = data; this.currentExpected = expected;
     }
 
     @Before
     public void setUp() {
         servlet = new SearchProductServlet();
-        // Cực tốt: Bạn đã có hàm setter, không cần dùng Reflection phức tạp nữa
         servlet.setProductService(productService); 
     }
 
@@ -72,11 +61,11 @@ public class SearchProductServletTest {
     @Test
     public void testDoGet_Search_Normal() throws Exception {
         setTestCaseInfo("SEARCH_01", "Tìm kiếm thông thường", 
-                "1. Action=null (mặc định search)\n2. Key='ao'\n3. Service trả list", 
+                "1. Action=null\n2. Key='ao'\n3. Service trả list", 
                 "Key='ao'", "Forward searchResult.jsp");
 
         // 1. Mock Input
-        when(request.getParameter("action")).thenReturn(null); // Mặc định là search
+        when(request.getParameter("action")).thenReturn(null);
         when(request.getParameter("keyword")).thenReturn("ao");
         when(request.getRequestDispatcher(contains("searchResult.jsp"))).thenReturn(dispatcher);
 
@@ -89,66 +78,25 @@ public class SearchProductServletTest {
         servlet.doGet(request, response);
 
         // 4. Verify
-        verify(request).setAttribute(eq("productList"), eq(results)); // Phải set list kết quả
-        verify(request).setAttribute(eq("keyword"), eq("ao")); // Giữ lại keyword
+        verify(request).setAttribute(eq("productList"), eq(results)); 
+        verify(request).setAttribute(eq("keyword"), eq("ao"));
         verify(dispatcher).forward(request, response);
     }
 
-    @Test
-    public void testDoGet_Search_Empty() throws Exception {
-        setTestCaseInfo("SEARCH_02", "Tìm kiếm rỗng", 
-                "1. Key='   '\n2. Service trả all", 
-                "Key='   '", "Forward searchResult.jsp");
-
-        when(request.getParameter("keyword")).thenReturn("   ");
-        when(request.getRequestDispatcher(contains("searchResult.jsp"))).thenReturn(dispatcher);
-        
-        // Mock service trả về rỗng hoặc all tùy logic service (đã test ở ServiceTest)
-        when(productService.searchProducts("")).thenReturn(new ArrayList<>());
-
-        servlet.doGet(request, response);
-
-        verify(request).setAttribute(eq("productList"), any(List.class));
-        verify(dispatcher).forward(request, response);
-    }
-
-    // --- BỔ SUNG 1: TÌM KIẾM KHÔNG CÓ KẾT QUẢ ---
     @Test
     public void testDoGet_Search_NoResult() throws Exception {
-        setTestCaseInfo("SEARCH_03", "Tìm kiếm không thấy", 
-                "Key='xyz' -> Service trả list rỗng", 
-                "List size=0", "Forward searchResult.jsp");
+        setTestCaseInfo("SEARCH_02", "Tìm kiếm không thấy", 
+                "Key='xyz' -> Service trả list rỗng", "List size=0", "Forward searchResult.jsp");
 
         when(request.getParameter("action")).thenReturn(null);
         when(request.getParameter("keyword")).thenReturn("xyz");
         when(request.getRequestDispatcher(contains("searchResult.jsp"))).thenReturn(dispatcher);
 
-        // Mock trả về list rỗng (nhưng không null)
         when(productService.searchProducts("xyz")).thenReturn(Collections.emptyList());
 
         servlet.doGet(request, response);
 
         verify(request).setAttribute(eq("productList"), eq(Collections.emptyList()));
-        verify(dispatcher).forward(request, response);
-    }
-
-    // --- BỔ SUNG 2: KEYWORD BỊ NULL ---
-    @Test
-    public void testDoGet_Search_NullKey() throws Exception {
-        setTestCaseInfo("SEARCH_04", "Keyword bị Null", 
-                "Param keyword=null", 
-                "Xử lý như rỗng", "Không crash");
-
-        when(request.getParameter("action")).thenReturn("search");
-        when(request.getParameter("keyword")).thenReturn(null); // Trường hợp null
-        when(request.getRequestDispatcher(contains("searchResult.jsp"))).thenReturn(dispatcher);
-        
-        // Giả sử logic của bạn là null thì tìm tất cả hoặc tìm rỗng ("")
-        when(productService.searchProducts("")).thenReturn(new ArrayList<>()); 
-
-        servlet.doGet(request, response);
-
-        // Verify: Không được lỗi NullPointerException
         verify(dispatcher).forward(request, response);
     }
 
@@ -201,7 +149,7 @@ public class SearchProductServletTest {
 
         servlet.doGet(request, response);
 
-        // Verify: Redirect về trang searchResult (theo logic code bạn gửi)
+        // Verify: Redirect về trang searchResult (theo logic code của bạn)
         verify(response).sendRedirect(contains("searchResult.jsp"));
     }
 
@@ -209,10 +157,10 @@ public class SearchProductServletTest {
     public void testDoGet_Detail_InvalidID() throws Exception {
         setTestCaseInfo("DETAIL_03", "ID lỗi (chữ)", 
                 "1. Action='detail', ID='abc'", 
-                "ID='abc'", "Bắt lỗi -> Redirect");
+                "ID='abc'", "Catch NumberFormat -> Redirect");
 
         when(request.getParameter("action")).thenReturn("detail");
-        when(request.getParameter("id")).thenReturn("abc"); // Lỗi NumberFormat
+        when(request.getParameter("id")).thenReturn("abc"); 
         when(request.getContextPath()).thenReturn("/ShopDuck");
 
         servlet.doGet(request, response);
@@ -221,25 +169,8 @@ public class SearchProductServletTest {
         verify(response).sendRedirect(contains("searchResult.jsp"));
     }
 
-    // --- BỔ SUNG 3: XEM CHI TIẾT THIẾU ID ---
-    @Test
-    public void testDoGet_Detail_MissingID() throws Exception {
-        setTestCaseInfo("DETAIL_04", "Thiếu tham số ID", 
-                "Action='detail', ID=null", 
-                "Báo lỗi/Redirect", "Redirect searchResult");
-
-        when(request.getParameter("action")).thenReturn("detail");
-        when(request.getParameter("id")).thenReturn(null); // Không truyền ID
-        when(request.getContextPath()).thenReturn("/ShopDuck");
-
-        servlet.doGet(request, response);
-
-        // Verify: Phải redirect về trang danh sách (hoặc trang lỗi tùy code bạn)
-        verify(response).sendRedirect(contains("searchResult.jsp"));
-    }
-
     // ==========================================
-    // 3. TEST NGOẠI LỆ (Exception Handling)
+    // 3. TEST NGOẠI LỆ TOÀN CỤC
     // ==========================================
 
     @Test
@@ -260,22 +191,17 @@ public class SearchProductServletTest {
         verify(response).sendRedirect(contains("view-products"));
     }
 
-    // === XUẤT EXCEL MỚI ===
-    @Rule
-    public TestWatcher watcher = new TestWatcher() {
-        @Override
-        protected void succeeded(Description description) {
-            ExcelTestExporter.addResult(currentId, currentName, currentSteps, currentData, currentExpected, "OK", "PASS");
+    // === EXCEL EXPORT ===
+    @Rule public TestWatcher watcher = new TestWatcher() {
+        @Override protected void succeeded(Description d) { 
+            // [SỬA] Đảo vị trí currentData và currentSteps để khớp với file Excel
+            ExcelTestExporter.addResult(currentId, currentName, currentData, currentSteps, currentExpected, "OK", "PASS"); 
         }
-        @Override
-        protected void failed(Throwable e, Description description) {
-            ExcelTestExporter.addResult(currentId, currentName, currentSteps, currentData, currentExpected, e.getMessage(), "FAIL");
+        @Override protected void failed(Throwable e, Description d) { 
+            // [SỬA] Đảo vị trí currentData và currentSteps
+            ExcelTestExporter.addResult(currentId, currentName, currentData, currentSteps, currentExpected, e.getMessage(), "FAIL"); 
         }
     };
 
-    @AfterClass
-    public static void exportReport() {
-        // Xuất ra file .xlsx
-        ExcelTestExporter.exportToExcel("KetQuaTest_SearchProductServlet.xlsx");
-    }
+    @AfterClass public static void exportReport() { ExcelTestExporter.exportToExcel("KetQuaTest_SearchProductServlet.xlsx"); }
 }

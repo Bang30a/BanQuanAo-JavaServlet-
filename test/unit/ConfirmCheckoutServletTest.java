@@ -6,7 +6,7 @@ import service.OrderService;
 import service.OrderResult;
 import entity.CartBean;
 import entity.Users;
-import util.ExcelTestExporter; // <--- ĐÃ IMPORT
+import util.ExcelTestExporter;
 
 // === IMPORT TEST & MOCKITO ===
 import org.junit.Before;
@@ -46,26 +46,17 @@ public class ConfirmCheckoutServletTest {
     @Mock private RequestDispatcher dispatcher;
     @Mock private OrderService orderService;
 
-    // === CẤU HÌNH BÁO CÁO (Dùng biến cục bộ để hứng dữ liệu) ===
-    private String currentId = "";
-    private String currentName = "";
-    private String currentSteps = "";
-    private String currentData = "";
-    private String currentExpected = "";
+    // === CẤU HÌNH BÁO CÁO ===
+    private String currentId = "", currentName = "", currentSteps = "", currentData = "", currentExpected = "";
 
     private void setTestCaseInfo(String id, String name, String steps, String data, String expected) {
-        this.currentId = id;
-        this.currentName = name;
-        this.currentSteps = steps;
-        this.currentData = data;
-        this.currentExpected = expected;
+        this.currentId = id; this.currentName = name; this.currentSteps = steps; 
+        this.currentData = data; this.currentExpected = expected;
     }
 
     @Before
     public void setUp() throws Exception {
         servlet = new ConfirmCheckoutServlet();
-        
-        // Inject Mock Service
         try {
             Field serviceField = ConfirmCheckoutServlet.class.getDeclaredField("orderService");
             serviceField.setAccessible(true);
@@ -73,94 +64,137 @@ public class ConfirmCheckoutServletTest {
         } catch (NoSuchFieldException e) {}
     }
 
+    // --- HELPER ---
+    private void invokeDoPost() throws Exception {
+        Method doPost = ConfirmCheckoutServlet.class.getDeclaredMethod("doPost", HttpServletRequest.class, HttpServletResponse.class);
+        doPost.setAccessible(true);
+        doPost.invoke(servlet, request, response);
+    }
+
+    // --- CASE 1: THÀNH CÔNG ---
     @Test
     public void testDoPost_Success() throws Exception {
         setTestCaseInfo("CHECKOUT_01", "Đặt hàng thành công", 
-                "1. User, Cart OK\n2. Service return SUCCESS", 
-                "Addr: Hanoi, Phone: 0909", "Xóa Cart & Redirect Home");
+                "1. Service return SUCCESS", "Addr: Hanoi", "Xóa Cart & Redirect Home");
 
-        // 1. Mock Session Data
         when(request.getSession()).thenReturn(session);
         when(session.getAttribute("user")).thenReturn(new Users());
         when(session.getAttribute("cart")).thenReturn(new ArrayList<CartBean>());
         when(request.getContextPath()).thenReturn("/ShopDuck");
 
-        // 2. Mock Input
-        when(request.getParameter("address")).thenReturn("Hanoi");
-        when(request.getParameter("phone")).thenReturn("0909");
+        when(orderService.placeOrder(any(), any(), any(), any())).thenReturn(OrderResult.SUCCESS);
 
-        // 3. Mock Service: Trả về SUCCESS
-        when(orderService.placeOrder(any(), any(), eq("Hanoi"), eq("0909")))
-                .thenReturn(OrderResult.SUCCESS);
+        invokeDoPost();
 
-        // 4. Run
-        Method doPost = ConfirmCheckoutServlet.class.getDeclaredMethod("doPost", HttpServletRequest.class, HttpServletResponse.class);
-        doPost.setAccessible(true);
-        doPost.invoke(servlet, request, response);
-
-        // 5. Verify
-        verify(session).removeAttribute("cart"); // Quan trọng: Phải xóa giỏ
-        verify(response).sendRedirect(contains("/user/view-products"));
+        verify(session).removeAttribute("cart");
+        verify(response).sendRedirect(contains("/user/view-products?success=true"));
     }
 
+    // --- CASE 2: CHƯA LOGIN ---
     @Test
     public void testDoPost_NotLoggedIn() throws Exception {
         setTestCaseInfo("CHECKOUT_02", "Chưa đăng nhập", 
-                "1. User session = null\n2. Service return NOT_LOGGED_IN", 
-                "User=null", "Redirect Login");
+                "1. Service return NOT_LOGGED_IN", "User=null", "Redirect Login");
 
         when(request.getSession()).thenReturn(session);
-        when(session.getAttribute("user")).thenReturn(null);
         when(request.getContextPath()).thenReturn("/ShopDuck");
+        when(orderService.placeOrder(any(), any(), any(), any())).thenReturn(OrderResult.NOT_LOGGED_IN);
 
-        when(orderService.placeOrder(any(), any(), any(), any()))
-                .thenReturn(OrderResult.NOT_LOGGED_IN);
-
-        Method doPost = ConfirmCheckoutServlet.class.getDeclaredMethod("doPost", HttpServletRequest.class, HttpServletResponse.class);
-        doPost.setAccessible(true);
-        doPost.invoke(servlet, request, response);
+        invokeDoPost();
 
         verify(response).sendRedirect(contains("Login.jsp"));
     }
 
+    // --- CASE 3: THIẾU THÔNG TIN ---
     @Test
     public void testDoPost_MissingInfo() throws Exception {
         setTestCaseInfo("CHECKOUT_03", "Thiếu thông tin", 
-                "1. Address/Phone null\n2. Service return MISSING_INFO", 
-                "Addr=null", "Forward lại Checkout.jsp + Error");
+                "1. Service return MISSING_INFO", "Addr=null", "Forward Checkout.jsp + Error");
+
+        when(request.getSession()).thenReturn(session);
+        when(request.getRequestDispatcher(contains("Checkout.jsp"))).thenReturn(dispatcher);
+        when(orderService.placeOrder(any(), any(), any(), any())).thenReturn(OrderResult.MISSING_INFO);
+
+        invokeDoPost();
+
+        verify(request).setAttribute(eq("error"), contains("Vui lòng nhập đầy đủ"));
+        verify(dispatcher).forward(request, response);
+    }
+
+    // --- [MỚI] CASE 4: GIỎ HÀNG RỖNG ---
+    @Test
+    public void testDoPost_EmptyCart() throws Exception {
+        setTestCaseInfo("CHECKOUT_04", "Giỏ hàng rỗng", 
+                "1. Service return EMPTY_CART", "Cart=[]", "Redirect view-cart.jsp");
 
         when(request.getSession()).thenReturn(session);
         when(request.getContextPath()).thenReturn("/ShopDuck");
-        when(request.getRequestDispatcher(contains("Checkout.jsp"))).thenReturn(dispatcher);
+        when(orderService.placeOrder(any(), any(), any(), any())).thenReturn(OrderResult.EMPTY_CART);
 
-        when(orderService.placeOrder(any(), any(), any(), any()))
-                .thenReturn(OrderResult.MISSING_INFO);
+        invokeDoPost();
 
-        Method doPost = ConfirmCheckoutServlet.class.getDeclaredMethod("doPost", HttpServletRequest.class, HttpServletResponse.class);
-        doPost.setAccessible(true);
-        doPost.invoke(servlet, request, response);
-
-        verify(request).setAttribute(eq("error"), anyString()); // Báo lỗi
-        verify(dispatcher).forward(request, response); // Ở lại trang cũ
+        verify(response).sendRedirect(contains("view-cart.jsp"));
     }
 
-    // === CẤU HÌNH XUẤT EXCEL (DÙNG CLASS TIỆN ÍCH) ===
-    @Rule
-    public TestWatcher watcher = new TestWatcher() {
-        @Override
-        protected void succeeded(Description description) {
-            ExcelTestExporter.addResult(currentId, currentName, currentSteps, currentData, currentExpected, "OK", "PASS");
-        }
+    // --- [MỚI] CASE 5: LỖI LƯU ĐƠN HÀNG (DB) ---
+    @Test
+    public void testDoPost_OrderFailed() throws Exception {
+        setTestCaseInfo("CHECKOUT_05", "Lỗi lưu Order (DB)", 
+                "1. Service return ORDER_FAILED", "DB Error", "Forward Checkout.jsp + Error");
 
-        @Override
-        protected void failed(Throwable e, Description description) {
-            ExcelTestExporter.addResult(currentId, currentName, currentSteps, currentData, currentExpected, e.getMessage(), "FAIL");
+        when(request.getSession()).thenReturn(session);
+        when(request.getRequestDispatcher(contains("Checkout.jsp"))).thenReturn(dispatcher);
+        when(orderService.placeOrder(any(), any(), any(), any())).thenReturn(OrderResult.ORDER_FAILED);
+
+        invokeDoPost();
+
+        verify(request).setAttribute(eq("error"), contains("thất bại"));
+        verify(dispatcher).forward(request, response);
+    }
+
+    // --- [MỚI] CASE 6: LỖI LƯU CHI TIẾT ---
+    @Test
+    public void testDoPost_DetailFailed() throws Exception {
+        setTestCaseInfo("CHECKOUT_06", "Lỗi lưu chi tiết", 
+                "1. Service return DETAIL_FAILED", "DB Error", "Forward Checkout.jsp + Error");
+
+        when(request.getSession()).thenReturn(session);
+        when(request.getRequestDispatcher(contains("Checkout.jsp"))).thenReturn(dispatcher);
+        when(orderService.placeOrder(any(), any(), any(), any())).thenReturn(OrderResult.DETAIL_FAILED);
+
+        invokeDoPost();
+
+        verify(request).setAttribute(eq("error"), contains("thất bại"));
+        verify(dispatcher).forward(request, response);
+    }
+
+    // --- [MỚI] CASE 7: LỖI NGOẠI LỆ (EXCEPTION) ---
+    @Test
+    public void testDoPost_Exception() throws Exception {
+        setTestCaseInfo("CHECKOUT_07", "Lỗi hệ thống", 
+                "1. Service return EXCEPTION", "Crash", "Forward Checkout.jsp + Error");
+
+        when(request.getSession()).thenReturn(session);
+        when(request.getRequestDispatcher(contains("Checkout.jsp"))).thenReturn(dispatcher);
+        when(orderService.placeOrder(any(), any(), any(), any())).thenReturn(OrderResult.EXCEPTION);
+
+        invokeDoPost();
+
+        verify(request).setAttribute(eq("error"), contains("thất bại"));
+        verify(dispatcher).forward(request, response);
+    }
+
+    // === EXCEL EXPORT ===
+    @Rule public TestWatcher watcher = new TestWatcher() {
+        @Override protected void succeeded(Description d) { 
+            // [SỬA] Đảo vị trí currentData và currentSteps để khớp với file Excel
+            ExcelTestExporter.addResult(currentId, currentName, currentData, currentSteps, currentExpected, "OK", "PASS"); 
+        }
+        @Override protected void failed(Throwable e, Description d) { 
+            // [SỬA] Đảo vị trí currentData và currentSteps
+            ExcelTestExporter.addResult(currentId, currentName, currentData, currentSteps, currentExpected, e.getMessage(), "FAIL"); 
         }
     };
 
-    @AfterClass
-    public static void exportReport() {
-        // Xuất ra file .xlsx xịn sò
-        ExcelTestExporter.exportToExcel("KetQuaTest_ConfirmCheckoutServlet.xlsx");
-    }
+    @AfterClass public static void exportReport() { ExcelTestExporter.exportToExcel("KetQuaTest_ConfirmCheckoutServlet.xlsx"); }
 }

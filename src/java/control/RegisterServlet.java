@@ -11,27 +11,24 @@ import java.io.IOException;
 @WebServlet(name = "RegisterServlet", urlPatterns = {"/RegisterServlet"})
 public class RegisterServlet extends HttpServlet {
 
-    // --- PHẦN THÊM MỚI ĐỂ HỖ TRỢ TEST ---
     private UsersDao usersDao;
 
-    // 1. Hàm Setter: Dùng để Unit Test chèn Mock DAO vào
+    // Hàm Setter cho Mock Test
     public void setUsersDao(UsersDao usersDao) {
         this.usersDao = usersDao;
     }
 
-    // 2. Hàm Getter: Dùng để lấy DAO. Nếu chưa có (chạy thật) thì tự new mới.
+    // Hàm Getter lấy DAO
     private UsersDao getUsersDao() {
         if (usersDao == null) {
             usersDao = new UsersDao();
         }
         return usersDao;
     }
-    // ------------------------------------
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        // [SỬA PATH] Trỏ vào thư mục user/auth/
         response.sendRedirect(request.getContextPath() + "/user/auth/Register.jsp");
     }
 
@@ -49,31 +46,34 @@ public class RegisterServlet extends HttpServlet {
 
         HttpSession session = request.getSession();
         
-        // [QUAN TRỌNG] Thay đổi cách gọi DAO tại đây
-        // Thay vì: UsersDao dao = new UsersDao();
-        // Ta dùng:
+        // 0. [THÊM MỚI] Kiểm tra độ mạnh mật khẩu
+        // Điều kiện: Không được để trống và phải có ít nhất 6 ký tự
+        if (password == null || password.trim().length() < 6) {
+            session.setAttribute("registerError", "Mật khẩu quá yếu! Vui lòng nhập ít nhất 6 ký tự.");
+            response.sendRedirect(request.getContextPath() + "/user/auth/Register.jsp");
+            return; // Dừng xử lý, không lưu vào DB
+        }
+
         UsersDao dao = getUsersDao(); 
 
         // 1. Kiểm tra trùng tên đăng nhập
         if (dao.checkUserExists(username)) {
-            session.setAttribute("registerError", "⚠️ Tên đăng nhập đã tồn tại!");
-            // [SỬA PATH] Quay lại trang đăng ký
+            session.setAttribute("registerError", "Tên đăng nhập đã tồn tại!");
             response.sendRedirect(request.getContextPath() + "/user/auth/Register.jsp");
             return;
         }
 
-        // 2. Tạo user mới (Mặc định role là 'user')
+        // 2. Tạo user mới
         Users newUser = new Users(username, password, fullname, email, "user");
         boolean success = dao.register(newUser);
 
         if (success) {
-            // ✅ Đăng ký thành công
-            session.setAttribute("registerSuccess", "🎉 Đăng ký thành công! Vui lòng đăng nhập.");
-            // [SỬA PATH] Chuyển sang trang Login
+            // ✅ Đăng ký thành công -> Lưu thông báo -> Chuyển sang Login
+            session.setAttribute("registerSuccess", "Đăng ký thành công! Vui lòng đăng nhập.");
             response.sendRedirect(request.getContextPath() + "/user/auth/Login.jsp");
         } else {
             // ❌ Lỗi database
-            session.setAttribute("registerError", "❌ Đăng ký thất bại. Vui lòng thử lại!");
+            session.setAttribute("registerError", "Đăng ký thất bại. Vui lòng thử lại!");
             response.sendRedirect(request.getContextPath() + "/user/auth/Register.jsp");
         }
     }

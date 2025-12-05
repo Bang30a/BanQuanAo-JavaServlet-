@@ -77,6 +77,11 @@
                 </c:choose>
             </h2>
 
+            <c:if test="${not empty error}">
+                <div class="alert alert-danger text-center mb-4" role="alert">
+                    ⚠️ ${error}
+                </div>
+            </c:if>
             <form action="${context}/admin/ProductVariantsManagerServlet" method="post">
                 
                 <input type="hidden" name="action" value="${action}">
@@ -106,7 +111,6 @@
                             <input type="number" class="form-control" name="stock" value="${pv.stock}" min="0" required>
                         </div>
 
-                        <!-- [ĐÃ SỬA] Giá bán chuyển sang Readonly -->
                         <div class="mb-3">
                             <label class="form-label">Giá bán</label>
                             <div class="input-group">

@@ -112,7 +112,6 @@ public class ProductDao {
         return list;
     }
 
-    // [ĐÃ SỬA] Dùng LOWER() cho cả Tên và Mô tả
     public List<Products> searchByKeyword(String keyword) {
         List<Products> list = new ArrayList<>();
         // Sửa câu query dùng LOWER(...) LIKE LOWER(?)

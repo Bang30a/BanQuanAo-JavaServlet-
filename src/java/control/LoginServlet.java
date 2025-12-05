@@ -14,17 +14,27 @@ import javax.servlet.http.*;
 public class LoginServlet extends HttpServlet {
 
     private LoginService loginService;
+    
+    // Thêm biến DAO để có thể kiểm tra user tồn tại
+    private UsersDao usersDao;
+
+    // Getter cho DAO (Hỗ trợ Mock test sau này nếu cần)
+    private UsersDao getUsersDao() {
+        if (usersDao == null) {
+            usersDao = new UsersDao();
+        }
+        return usersDao;
+    }
 
     @Override
     public void init() throws ServletException {
-        UsersDao usersDao = new UsersDao();
-        this.loginService = new LoginService(usersDao);
+        // Khởi tạo service
+        this.loginService = new LoginService(getUsersDao());
     }
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        // [SỬA PATH] Trỏ đúng vào thư mục user/auth/
         response.sendRedirect(request.getContextPath() + "/user/auth/Login.jsp");
     }
 
@@ -37,9 +47,20 @@ public class LoginServlet extends HttpServlet {
         String password = request.getParameter("password");
 
         HttpSession session = request.getSession();
+        
+        // --- [THÊM MỚI] CHECK TÀI KHOẢN TỒN TẠI TRƯỚC ---
+        UsersDao dao = getUsersDao();
+        if (!dao.checkUserExists(username)) {
+            // Nếu không tìm thấy user trong DB -> Báo lỗi cụ thể
+            session.setAttribute("loginError", "Tài khoản không tồn tại!");
+            response.sendRedirect(request.getContextPath() + "/user/auth/Login.jsp");
+            return; // Dừng luôn, không cần check pass
+        }
+        // ------------------------------------------------
+
+        // Nếu tài khoản có tồn tại, mới check tiếp mật khẩu qua Service
         LoginResult result = loginService.login(username, password);
 
-        // Lấy URL trang trước đó (nếu người dùng bị chặn khi đang truy cập trang nào đó)
         String redirectUrl = (String) session.getAttribute("redirectAfterLogin");
 
         switch (result.getStatus()) {
@@ -47,8 +68,6 @@ public class LoginServlet extends HttpServlet {
                 session.setAttribute("user", result.getUser());
                 session.removeAttribute("loginError");
                 session.removeAttribute("redirectAfterLogin");
-                
-                // [SỬA PATH] Admin về Dashboard mới
                 response.sendRedirect(request.getContextPath() + "/admin/dashboard/index.jsp");
                 break;
 
@@ -57,18 +76,16 @@ public class LoginServlet extends HttpServlet {
                 session.removeAttribute("loginError");
                 session.removeAttribute("redirectAfterLogin");
 
-                // --- LOGIC ĐIỀU HƯỚNG ---
                 if (redirectUrl != null && !redirectUrl.isEmpty()) {
-                    response.sendRedirect(redirectUrl); // Quay lại trang cũ
+                    response.sendRedirect(redirectUrl);
                 } else {
-                    // [QUAN TRỌNG] Về Servlet trang chủ (/user/view-products)
                     response.sendRedirect(request.getContextPath() + "/user/view-products");
                 }
                 break;
 
             case FAILED_CREDENTIALS:
-                session.setAttribute("loginError", "❌ Sai tên đăng nhập hoặc mật khẩu!");
-                // [SỬA PATH] Về lại form login
+                // Lúc này chắc chắn là Sai Mật Khẩu (vì đã check tồn tại ở trên rồi)
+                session.setAttribute("loginError", "Mật khẩu không chính xác!");
                 response.sendRedirect(request.getContextPath() + "/user/auth/Login.jsp");
                 break;
 

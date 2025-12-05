@@ -1,0 +1,8 @@
+=============== TEST EXECUTION REPORT ================
+MODULE               | TEST CASE                                     | STATUS   | ACTUAL RESULT / DETAILS
+-------------------- | --------------------------------------------- | -------- | ------------------------------
+LoginServiceTest     | testLogin_InvalidRole                         | PASS     | 
+LoginServiceTest     | testLogin_AdminSuccess                        | PASS     | 
+LoginServiceTest     | testLogin_FailedCredentials                   | PASS     | 
+LoginServiceTest     | testLogin_UserSuccess                         | PASS     | 
+LoginServiceTest     | testLogin_AdminSuccess_CaseInsensitive        | PASS     | 

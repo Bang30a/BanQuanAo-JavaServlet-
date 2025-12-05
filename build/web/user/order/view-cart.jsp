@@ -150,6 +150,17 @@
             <div class="cart-card">
                 <h2>🛍️ Giỏ hàng của bạn</h2>
 
+                <!-- [THÊM ĐOẠN NÀY] Hiển thị thông báo lỗi từ Session (ví dụ: Hết hàng, quá tồn kho) -->
+                <c:if test="${not empty sessionScope.cartError}">
+                    <div class="alert alert-warning alert-dismissible fade show shadow-sm mb-4" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i> 
+                        <strong>Thông báo:</strong> ${sessionScope.cartError}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                    <%-- Xóa session ngay sau khi hiện để không bị lặp lại khi F5 --%>
+                    <c:remove var="cartError" scope="session" />
+                </c:if>
+
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <a href="${context}/user/view-products" class="btn btn-custom btn-continue text-decoration-none">
                         <i class="bi bi-arrow-left"></i> Tiếp tục mua sắm
@@ -199,10 +210,11 @@
                                                 <form action="${context}/user/update-cart" method="post" class="d-flex align-items-center justify-content-center">
                                                     <input type="hidden" name="variantId" value="${item.productVariant.id}" />
                                                     
+                                                    <!-- [SỬA] Thay đổi onchange="this.form.submit()" thành gọi hàm validateCartQuantity -->
                                                     <input type="number" name="quantity" value="${item.quantity}" min="1" 
                                                            class="form-control form-control-sm text-center me-1" 
                                                            style="width: 60px; border-radius: 6px;"
-                                                           onchange="this.form.submit()" /> 
+                                                           onchange="validateCartQuantity(this)" /> 
 
                                                     <button type="submit" class="btn btn-sm text-primary border-0" title="Cập nhật" style="background: none;">
                                                         <i class="bi bi-arrow-clockwise"></i>
@@ -254,5 +266,19 @@
     <jsp:include page="../includes/footer.jsp" />
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- [THÊM] Script kiểm tra số lượng khi thay đổi trong giỏ hàng -->
+    <script>
+        function validateCartQuantity(input) {
+            let val = parseInt(input.value);
+            // Nếu nhập < 1 hoặc không phải số
+            if (isNaN(val) || val < 1) {
+                alert("Số lượng tối thiểu là 1! Nếu bạn muốn xóa sản phẩm, vui lòng bấm nút Xóa (thùng rác).");
+                input.value = 1; // Reset về 1
+            }
+            // Sau khi kiểm tra xong thì submit form để cập nhật giá tiền
+            input.form.submit();
+        }
+    </script>
 </body>
 </html>

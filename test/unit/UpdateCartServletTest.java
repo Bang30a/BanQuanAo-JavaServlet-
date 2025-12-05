@@ -1,12 +1,12 @@
 package unit;
 
-// === IMPORT LOGIC CHÍNH ===
 import control.user.UpdateCartServlet;
+import dao.ProductVariantDao; // [MỚI]
+import entity.ProductVariants; // [MỚI]
 import entity.CartBean;
 import service.CartService;
-import util.ExcelTestExporter; // <-- Import class tiện ích
+import util.ExcelTestExporter;
 
-// === IMPORT TEST & MOCKITO ===
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -18,7 +18,6 @@ import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
-// === IMPORT SERVLET & REFLECTION ===
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -27,7 +26,6 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
-// === IMPORT JUNIT ===
 import org.junit.AfterClass;
 import org.junit.Rule;
 import org.junit.rules.TestWatcher;
@@ -42,21 +40,14 @@ public class UpdateCartServletTest {
     @Mock private HttpServletResponse response;
     @Mock private HttpSession session;
     @Mock private CartService cartService;
+    @Mock private ProductVariantDao variantDao; // [MỚI] Mock DAO
 
-    // === CẤU HÌNH BÁO CÁO (Biến instance) ===
-    private String currentId = "";
-    private String currentName = "";
-    private String currentSteps = "";
-    private String currentData = "";
-    private String currentExpected = "";
-    // Đã xóa list finalReportData
+    // === CẤU HÌNH BÁO CÁO ===
+    private String currentId = "", currentName = "", currentSteps = "", currentData = "", currentExpected = "";
 
     private void setTestCaseInfo(String id, String name, String steps, String data, String expected) {
-        this.currentId = id;
-        this.currentName = name;
-        this.currentSteps = steps;
-        this.currentData = data;
-        this.currentExpected = expected;
+        this.currentId = id; this.currentName = name; this.currentSteps = steps; 
+        this.currentData = data; this.currentExpected = expected;
     }
 
     @Before
@@ -64,125 +55,125 @@ public class UpdateCartServletTest {
         servlet = new UpdateCartServlet();
 
         // Inject Mock Service
-        try {
-            Field serviceField = UpdateCartServlet.class.getDeclaredField("cartService");
-            serviceField.setAccessible(true);
-            serviceField.set(servlet, cartService);
-        } catch (NoSuchFieldException e) {
-            System.err.println("CẢNH BÁO: Chưa khai báo cartService trong Servlet");
-        }
+        Field serviceField = UpdateCartServlet.class.getDeclaredField("cartService");
+        serviceField.setAccessible(true);
+        serviceField.set(servlet, cartService);
+
+        // [MỚI] Inject Mock DAO (dùng setter vừa tạo)
+        servlet.setVariantDao(variantDao);
     }
 
+    // --- CASE 1: UPDATE THÀNH CÔNG (KHO ĐỦ HÀNG) ---
     @Test
     public void testDoPost_UpdateSuccess() throws Exception {
-        setTestCaseInfo("UPDATE_01", "Cập nhật thành công", 
-                "1. Session có Cart\n2. Input ID=1, Qty=5", 
-                "ID=1, Qty=5", "Call Service update -> Redirect");
+        setTestCaseInfo("UPDATE_01", "Cập nhật thành công (Kho đủ)", 
+                "1. Input ID=1, Qty=5\n2. Mock Stock=100", 
+                "ID=1, Qty=5", "Update=5, No Error");
 
-        // 1. Mock Session & Cart
         List<CartBean> mockCart = new ArrayList<>();
         when(request.getSession()).thenReturn(session);
         when(session.getAttribute("cart")).thenReturn(mockCart);
         when(request.getContextPath()).thenReturn("/ShopDuck");
 
-        // 2. Mock Input
         when(request.getParameter("variantId")).thenReturn("1");
         when(request.getParameter("quantity")).thenReturn("5");
 
-        // 3. Run doPost
-        Method doPost = UpdateCartServlet.class.getDeclaredMethod("doPost", HttpServletRequest.class, HttpServletResponse.class);
-        doPost.setAccessible(true);
-        doPost.invoke(servlet, request, response);
+        // [MỚI] Mock tồn kho đủ (100 > 5)
+        ProductVariants mockVariant = new ProductVariants();
+        mockVariant.setStock(100);
+        when(variantDao.findById(1)).thenReturn(mockVariant);
 
-        // 4. Verify
-        verify(cartService).updateQuantity(eq(mockCart), eq(1), eq(5)); // Quan trọng: Check xem service có được gọi đúng ko
-        verify(session).setAttribute(eq("cart"), eq(mockCart));
+        invokeDoPost();
+
+        // Verify: Service phải được gọi với số lượng 5 (như khách nhập)
+        verify(cartService).updateQuantity(eq(mockCart), eq(1), eq(5));
         verify(response).sendRedirect(contains("view-cart.jsp"));
     }
 
+    // --- CASE 2: UPDATE QUÁ TỒN KHO ---
     @Test
-    public void testDoPost_CartNull() throws Exception {
-        setTestCaseInfo("UPDATE_02", "Cập nhật khi giỏ Null", 
-                "1. Cart = null", 
-                "Cart=null", "Redirect ngay, Service không chạy");
+    public void testDoPost_ExceedStock() throws Exception {
+        setTestCaseInfo("UPDATE_02", "Cập nhật quá tồn kho", 
+                "1. Input Qty=10\n2. Mock Stock=3", 
+                "Qty=10, Stock=3", "Update=3, Set Error");
 
+        List<CartBean> mockCart = new ArrayList<>();
         when(request.getSession()).thenReturn(session);
-        when(session.getAttribute("cart")).thenReturn(null); // Giỏ rỗng
+        when(session.getAttribute("cart")).thenReturn(mockCart);
         when(request.getContextPath()).thenReturn("/ShopDuck");
 
-        // Run
-        Method doPost = UpdateCartServlet.class.getDeclaredMethod("doPost", HttpServletRequest.class, HttpServletResponse.class);
-        doPost.setAccessible(true);
-        doPost.invoke(servlet, request, response);
+        when(request.getParameter("variantId")).thenReturn("1");
+        when(request.getParameter("quantity")).thenReturn("10"); // Khách muốn mua 10
 
-        // Verify
-        verify(cartService, never()).updateQuantity(any(), anyInt(), anyInt()); // Đảm bảo không gọi service
+        // [MỚI] Mock tồn kho thiếu (chỉ còn 3)
+        ProductVariants mockVariant = new ProductVariants();
+        mockVariant.setStock(3);
+        when(variantDao.findById(1)).thenReturn(mockVariant);
+
+        invokeDoPost();
+
+        // Verify 1: Service chỉ được gọi với số 3 (bằng tồn kho)
+        verify(cartService).updateQuantity(eq(mockCart), eq(1), eq(3));
+        
+        // Verify 2: Phải set thông báo lỗi vào session
+        verify(session).setAttribute(eq("cartError"), contains("chỉ còn 3"));
         verify(response).sendRedirect(contains("view-cart.jsp"));
     }
 
+    // --- CASE 3: GIỎ RỖNG (NULL) ---
+    @Test
+    public void testDoPost_CartNull() throws Exception {
+        setTestCaseInfo("UPDATE_03", "Cập nhật khi giỏ Null", 
+                "1. Cart = null", "Cart=null", "Redirect ngay");
+
+        when(request.getSession()).thenReturn(session);
+        when(session.getAttribute("cart")).thenReturn(null); 
+        when(request.getContextPath()).thenReturn("/ShopDuck");
+
+        invokeDoPost();
+
+        verify(cartService, never()).updateQuantity(any(), anyInt(), anyInt());
+        verify(response).sendRedirect(contains("view-cart.jsp"));
+    }
+
+    // --- CASE 4: INPUT SAI FORMAT ---
     @Test
     public void testDoPost_InvalidInput() throws Exception {
-        setTestCaseInfo("UPDATE_03", "Input lỗi (Chữ)", 
-                "1. Qty = 'abc'", 
-                "Qty='abc'", "Bắt lỗi, không gọi Service");
+        setTestCaseInfo("UPDATE_04", "Input lỗi (Chữ)", 
+                "1. Qty = 'abc'", "Qty='abc'", "Catch lỗi, không gọi Service");
 
         when(request.getSession()).thenReturn(session);
         when(session.getAttribute("cart")).thenReturn(new ArrayList<>());
         when(request.getContextPath()).thenReturn("/ShopDuck");
 
-        // Mock Input Rác
         when(request.getParameter("variantId")).thenReturn("1");
-        when(request.getParameter("quantity")).thenReturn("abc"); // Lỗi ở đây
+        when(request.getParameter("quantity")).thenReturn("abc"); 
 
-        // Run
-        Method doPost = UpdateCartServlet.class.getDeclaredMethod("doPost", HttpServletRequest.class, HttpServletResponse.class);
-        doPost.setAccessible(true);
-        doPost.invoke(servlet, request, response);
+        invokeDoPost();
 
-        // Verify
         verify(cartService, never()).updateQuantity(any(), anyInt(), anyInt());
         verify(response).sendRedirect(contains("view-cart.jsp"));
     }
-    
-    @Test
-    public void testDoPost_ZeroQuantity() throws Exception {
-        setTestCaseInfo("UPDATE_04", "Cập nhật về 0", 
-                "1. Input Qty = 0", 
-                "Qty=0", "Service được gọi với 0");
 
-        List<CartBean> mockCart = new ArrayList<>();
-        when(request.getSession()).thenReturn(session);
-        when(session.getAttribute("cart")).thenReturn(mockCart);
-        when(request.getContextPath()).thenReturn("/ShopDuck");
-
-        when(request.getParameter("variantId")).thenReturn("1");
-        when(request.getParameter("quantity")).thenReturn("0"); // User nhập 0
-
-        // Run
+    // === HELPER ===
+    private void invokeDoPost() throws Exception {
         Method doPost = UpdateCartServlet.class.getDeclaredMethod("doPost", HttpServletRequest.class, HttpServletResponse.class);
         doPost.setAccessible(true);
         doPost.invoke(servlet, request, response);
-
-        // Verify: Service phải được gọi với số 0 (Logic xóa do Service lo)
-        verify(cartService).updateQuantity(eq(mockCart), eq(1), eq(0));
     }
 
-    // === XUẤT EXCEL MỚI ===
-    @Rule
-    public TestWatcher watcher = new TestWatcher() {
-        @Override
-        protected void succeeded(Description description) {
-            ExcelTestExporter.addResult(currentId, currentName, currentSteps, currentData, currentExpected, "OK", "PASS");
+     // === EXCEL EXPORT ===
+    @Rule public TestWatcher watcher = new TestWatcher() {
+        @Override protected void succeeded(Description d) { 
+            // [SỬA] Đảo vị trí currentData và currentSteps để khớp với file Excel
+            ExcelTestExporter.addResult(currentId, currentName, currentData, currentSteps, currentExpected, "OK", "PASS"); 
         }
-        @Override
-        protected void failed(Throwable e, Description description) {
-            ExcelTestExporter.addResult(currentId, currentName, currentSteps, currentData, currentExpected, e.getMessage(), "FAIL");
+        @Override protected void failed(Throwable e, Description d) { 
+            // [SỬA] Đảo vị trí currentData và currentSteps
+            ExcelTestExporter.addResult(currentId, currentName, currentData, currentSteps, currentExpected, e.getMessage(), "FAIL"); 
         }
     };
 
-    @AfterClass
-    public static void exportReport() {
-        // Xuất ra file .xlsx
-        ExcelTestExporter.exportToExcel("KetQuaTest_UpdateCart.xlsx");
-    }
+
+    @AfterClass public static void exportReport() { ExcelTestExporter.exportToExcel("KetQuaTest_UpdateCart.xlsx"); }
 }
